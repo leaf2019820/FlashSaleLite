@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}用户登录{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0">欢迎回来</h3>
+                    <p class="mt-2 mb-0">请登录您的账号</p>
+                </div>
+                <div class="card-body p-4">
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" class="needs-validation" novalidate id="loginForm">
+                        <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="username" name="username" placeholder="用户名" required>
+                            <label for="username">用户名</label>
+                            <div class="invalid-feedback">请输入用户名</div>
+                        </div>
+                        <div class="form-floating mb-4">
+                            <input type="password" class="form-control" id="password" name="password" placeholder="密码" required>
+                            <label for="password">密码</label>
+                            <div class="invalid-feedback">请输入密码</div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">登录</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-transparent border-0 text-center py-3">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('register') }}" class="text-decoration-none">
+                            <i class="fas fa-user-plus me-1"></i> 注册新账号
+                        </a>
+                        <a href="{{ url_for('reset_password') }}" class="text-decoration-none">
+                            <i class="fas fa-key me-1"></i> 忘记密码？
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+    color: #0d6efd;
+}
+.btn-primary {
+    transition: all 0.3s;
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+}
+</style>
+
+<script>
+// 表单验证
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+
+// 处理登录表单提交
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!this.checkValidity()) {
+        this.classList.add('was-validated');
+        return;
+    }
+    
+    const formData = new FormData(this);
+    
+    fetch('/login', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.code === 403) {
+            // 显示全局提示
+            const globalAlert = document.getElementById('globalAlert');
+            const toast = globalAlert.querySelector('.toast');
+            toast.classList.add('bg-danger');
+            toast.querySelector('.toast-body').textContent = data.msg;
+            globalAlert.style.display = 'block';
+            const bsToast = new bootstrap.Toast(toast, {
+                delay: 3000  // 3秒后自动隐藏
+            });
+            bsToast.show();
+        } else if (data.code === 400) {
+            // 显示全局提示
+            const globalAlert = document.getElementById('globalAlert');
+            const toast = globalAlert.querySelector('.toast');
+            toast.classList.add('bg-warning');
+            toast.querySelector('.toast-body').textContent = data.msg;
+            globalAlert.style.display = 'block';
+            const bsToast = new bootstrap.Toast(toast, {
+                delay: 3000  // 3秒后自动隐藏
+            });
+            bsToast.show();
+        } else if (data.code === 200) {
+            // 登录成功，显示成功提示并跳转
+            const globalAlert = document.getElementById('globalAlert');
+            const toast = globalAlert.querySelector('.toast');
+            toast.classList.remove('bg-danger', 'bg-warning');
+            toast.classList.add('bg-success');
+            toast.querySelector('.toast-body').textContent = data.msg;
+            globalAlert.style.display = 'block';
+            const bsToast = new bootstrap.Toast(toast, {
+                delay: 2000  // 2秒后自动隐藏
+            });
+            bsToast.show();
+            
+            // 延迟跳转，让用户看到成功提示
+            setTimeout(() => {
+                window.location.href = data.redirect;
+            }, 2000);  // 2秒后跳转
+        }
+    })
+    .catch(error => {
+        // 如果不是 JSON 响应，说明是重定向
+        window.location.reload();
+    });
+});
+
+// 处理 flash 消息
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            const alert = document.querySelector('.alert');
+            if (alert) {
+                setTimeout(() => {
+                    alert.classList.remove('show');
+                    setTimeout(() => alert.remove(), 150);
+                }, 3000);
+            }
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+</script>
+{% endblock %}

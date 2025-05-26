@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}创建秒杀活动{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0 text-gray-800">创建秒杀活动</h2>
+        <a href="/admin/seckill/list" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-2"></i>返回列表
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form id="createSeckillForm" onsubmit="event.preventDefault(); submitForm();">
+                <div class="row">
+                    <!-- 左侧：基本信息 -->
+                    <div class="col-md-8">
+                        <div class="mb-4">
+                            <label for="goods_id" class="form-label fw-bold">选择关联商品</label>
+                            <select class="form-select form-select-lg" id="goods_id" required>
+                                <option value="">请选择商品</option>
+                                {% for goods in goods_list %}
+                                <option value="{{ goods.id }}" data-price="{{ goods.price }}">
+                                    {{ goods.name }}（原价：¥{{ goods.price }}）
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">请选择要参与秒杀的商品</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="start_time" class="form-label fw-bold">开始时间</label>
+                                <input type="datetime-local" class="form-control form-control-lg" 
+                                       id="start_time" required oninput="this.blur()">
+                                <div class="form-text">活动开始的具体时间</div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label for="end_time" class="form-label fw-bold">结束时间</label>
+                                <input type="datetime-local" class="form-control form-control-lg" 
+                                       id="end_time" required oninput="this.blur()">
+                                <div class="form-text">活动结束的具体时间</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="seckill_price" class="form-label fw-bold">秒杀价格（元）</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text">¥</span>
+                                    <input type="number" step="0.01" class="form-control" 
+                                           id="seckill_price" required>
+                                </div>
+                                <div class="form-text">秒杀活动的优惠价格</div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label for="total_stock" class="form-label fw-bold">总库存</label>
+                                <div class="input-group input-group-lg">
+                                    <input type="number" class="form-control" 
+                                           id="total_stock" required>
+                                    <span class="input-group-text">件</span>
+                                </div>
+                                <div class="form-text">秒杀活动的商品库存数量</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧：预览信息 -->
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title mb-4">
+                                    <i class="bi bi-info-circle me-2"></i>活动预览
+                                </h5>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">商品名称</label>
+                                    <div id="preview-name" class="fw-bold">-</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">原价</label>
+                                    <div id="preview-original-price" class="text-decoration-line-through">-</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">秒杀价</label>
+                                    <div id="preview-seckill-price" class="text-danger fw-bold">-</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">活动时间</label>
+                                    <div id="preview-time" class="small">-</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">库存数量</label>
+                                    <div id="preview-stock" class="fw-bold">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="button" class="btn btn-light me-2" onclick="window.location.href='/admin/seckill/list'">
+                        <i class="bi bi-x-circle me-2"></i>取消
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-2"></i>创建活动
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 提示信息 -->
+    <div id="alert" class="alert d-none position-fixed top-0 start-50 translate-middle-x mt-3" 
+         style="z-index: 1050; min-width: 300px;"></div>
+</div>
+
+<script>
+    // 实时更新预览信息
+    function updatePreview() {
+        const goodsSelect = document.getElementById('goods_id');
+        const selectedOption = goodsSelect.options[goodsSelect.selectedIndex];
+        const startTime = document.getElementById('start_time').value;
+        const endTime = document.getElementById('end_time').value;
+        const seckillPrice = document.getElementById('seckill_price').value;
+        const totalStock = document.getElementById('total_stock').value;
+
+        // 更新商品信息
+        document.getElementById('preview-name').textContent = selectedOption.text || '-';
+        document.getElementById('preview-original-price').textContent = 
+            selectedOption.dataset.price ? `¥${selectedOption.dataset.price}` : '-';
+        document.getElementById('preview-seckill-price').textContent = 
+            seckillPrice ? `¥${seckillPrice}` : '-';
+        document.getElementById('preview-stock').textContent = 
+            totalStock ? `${totalStock}件` : '-';
+
+        // 更新时间信息
+        if (startTime && endTime) {
+            const start = new Date(startTime).toLocaleString();
+            const end = new Date(endTime).toLocaleString();
+            document.getElementById('preview-time').textContent = `${start} 至 ${end}`;
+        } else {
+            document.getElementById('preview-time').textContent = '-';
+        }
+    }
+
+    // 为所有输入框添加预览更新事件
+    document.querySelectorAll('#createSeckillForm input, #createSeckillForm select').forEach(input => {
+        input.addEventListener('change', updatePreview);
+        input.addEventListener('input', updatePreview);
+    });
+
+    function submitForm() {
+        const alertEl = document.getElementById('alert');
+        const goodsId = document.getElementById('goods_id').value;
+        const startTime = document.getElementById('start_time').value;
+        const endTime = document.getElementById('end_time').value;
+        const seckillPrice = parseFloat(document.getElementById('seckill_price').value);
+        const totalStock = parseInt(document.getElementById('total_stock').value);
+
+        // 表单验证
+        const startTimeObj = new Date(startTime);
+        const endTimeObj = new Date(endTime);
+        if (endTimeObj <= startTimeObj) {
+            showAlert('结束时间必须晚于开始时间', 'danger');
+            return;
+        }
+
+        if (isNaN(seckillPrice) || seckillPrice <= 0) {
+            showAlert('秒杀价格必须为大于0的数值', 'danger');
+            return;
+        }
+
+        if (isNaN(totalStock) || totalStock <= 0) {
+            showAlert('总库存必须为大于0的整数', 'danger');
+            return;
+        }
+
+        if (!goodsId || !startTime || !endTime) {
+            showAlert('请填写所有必填字段', 'danger');
+            return;
+        }
+
+        const formData = {
+            goods_id: goodsId,
+            start_time: startTime,
+            end_time: endTime,
+            seckill_price: seckillPrice,
+            total_stock: totalStock
+        };
+
+        // 显示加载状态
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>创建中...';
+
+        fetch('/admin/seckill/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code === 200) {
+                showAlert('秒杀活动创建成功！正在跳转...', 'success');
+                let countdown = 2;
+                const timer = setInterval(() => {
+                    countdown--;
+                    if (countdown <= 0) {
+                        clearInterval(timer);
+                        window.location.href = '/admin/seckill/list';
+                    }
+                }, 1000);
+            } else {
+                showAlert(`创建失败：${data.msg}`, 'danger');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+        })
+        .catch(err => {
+            showAlert('网络异常，请重试', 'danger');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        });
+    }
+
+    function showAlert(message, type) {
+        const alertEl = document.getElementById('alert');
+        alertEl.className = `alert alert-${type} show`;
+        alertEl.textContent = message;
+        alertEl.classList.remove('d-none');
+        
+        // 3秒后自动隐藏
+        setTimeout(() => {
+            alertEl.classList.add('d-none');
+        }, 3000);
+    }
+</script>
+
+<style>
+    .form-control:focus, .form-select:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    
+    .alert {
+        transition: all 0.3s ease;
+    }
+    
+    .alert.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .alert:not(.show) {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    
+    .input-group-text {
+        background-color: #f8f9fa;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+    
+    .form-label {
+        color: #495057;
+    }
+    
+    .form-text {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}

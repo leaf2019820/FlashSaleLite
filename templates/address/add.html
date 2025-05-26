@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}添加地址{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">添加新地址</h1>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="receiver_name" class="form-label">收货人</label>
+            <input type="text" class="form-control" id="receiver_name" name="receiver_name" required>
+        </div>
+        <div class="mb-3">
+            <label for="phone" class="form-label">联系电话</label>
+            <input type="tel" class="form-control" id="phone" name="phone" pattern="[0-9]{11}" required>
+            <div class="form-text">请输入11位手机号码</div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label for="province" class="form-label">省份</label>
+                <input type="text" class="form-control" id="province" name="province" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="city" class="form-label">城市</label>
+                <input type="text" class="form-control" id="city" name="city" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="district" class="form-label">区县</label>
+                <input type="text" class="form-control" id="district" name="district" required>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="detail_address" class="form-label">详细地址</label>
+            <textarea class="form-control" id="detail_address" name="detail_address" rows="2" required></textarea>
+        </div>
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="is_default" name="is_default">
+            <label class="form-check-label" for="is_default">设为默认地址</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">保存地址</button>
+    </form>
+</div>
+{% endblock %}

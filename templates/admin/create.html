@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}创建管理员{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">创建管理员（仅首次使用）</div>
+                <div class="card-body">
+                    <form method="POST" action="/admin/create">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">管理员用户名</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">管理员密码</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger">创建管理员</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

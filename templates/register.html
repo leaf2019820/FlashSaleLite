@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}用户注册{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0">创建账号</h3>
+                    <p class="mt-2 mb-0">加入我们的购物社区</p>
+                </div>
+                <div class="card-body p-4">
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="username" name="username" placeholder="用户名" required>
+                            <label for="username">用户名</label>
+                            <div class="invalid-feedback">请输入用户名</div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="password" name="password" placeholder="密码" required>
+                            <label for="password">密码</label>
+                            <div class="invalid-feedback">请输入密码</div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="email" class="form-control" id="email" name="email" placeholder="邮箱">
+                            <label for="email">邮箱</label>
+                            <div class="form-text">请至少填写邮箱或手机号中的一项</div>
+                        </div>
+                        <div class="form-floating mb-4">
+                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="手机号">
+                            <label for="phone">手机号</label>
+                            <div class="form-text">请至少填写邮箱或手机号中的一项</div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">注册</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-transparent border-0 text-center py-3">
+                    <p class="mb-0">已有账号？ <a href="{{ url_for('login') }}" class="text-decoration-none">立即登录</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+    color: #0d6efd;
+}
+.btn-primary {
+    transition: all 0.3s;
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+}
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+</style>
+
+<script>
+// 表单验证
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+
+// 处理 flash 消息
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            const alert = document.querySelector('.alert');
+            if (alert) {
+                setTimeout(() => {
+                    alert.classList.remove('show');
+                    setTimeout(() => alert.remove(), 150);
+                }, 3000);
+            }
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+</script>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}编辑商品{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>编辑商品</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="row">
+            <div class="col-md-6">
+                <!-- 基本信息 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">基本信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">商品名称</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ goods.name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">商品描述</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ goods.description }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="category_id" class="form-label">商品分类</label>
+                            <select class="form-select" id="category_id" name="category_id" required>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if category.id == goods.category_id %}selected{% endif %}>{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 价格和库存 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">价格和库存</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="price" class="form-label">商品价格</label>
+                            <input type="number" class="form-control" id="price" name="price" step="0.01" value="{{ goods.price }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="original_price" class="form-label">原价</label>
+                            <input type="number" class="form-control" id="original_price" name="original_price" step="0.01" value="{{ goods.original_price }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="stock" class="form-label">库存数量</label>
+                            <input type="number" class="form-control" id="stock" name="stock" value="{{ goods.stock }}" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <!-- 商品规格 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">商品规格</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="brand" class="form-label">品牌</label>
+                            <input type="text" class="form-control" id="brand" name="brand" value="{{ goods.brand }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="model" class="form-label">型号</label>
+                            <input type="text" class="form-control" id="model" name="model" value="{{ goods.model }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="weight" class="form-label">重量(kg)</label>
+                            <input type="number" class="form-control" id="weight" name="weight" step="0.01" value="{{ goods.weight }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="dimensions" class="form-label">尺寸(长x宽x高)</label>
+                            <input type="text" class="form-control" id="dimensions" name="dimensions" value="{{ goods.dimensions }}" placeholder="例如: 10x20x30">
+                        </div>
+                        <div class="mb-3">
+                            <label for="material" class="form-label">材质</label>
+                            <input type="text" class="form-control" id="material" name="material" value="{{ goods.material }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="warranty" class="form-label">保修信息</label>
+                            <input type="text" class="form-control" id="warranty" name="warranty" value="{{ goods.warranty }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 商品图片 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">商品图片</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if goods.photo_url %}
+                        <div class="mb-3">
+                            <img src="{{ url_for('static', filename=goods.photo_url) }}" alt="当前商品图片" class="img-thumbnail" style="max-height: 200px;">
+                        </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <label for="photo" class="form-label">更换商品图片</label>
+                            <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
+                            <div class="form-text">如果不选择新图片，将保持原有图片不变</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">保存修改</button>
+            <a href="{{ url_for('admin.admin_goods_list') }}" class="btn btn-secondary">返回列表</a>
+        </div>
+    </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">用户管理</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>注册时间</th>
+                                    <th>用户类型</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ '管理员' if user.is_admin else '普通用户' }}</td>
+                                    <td>
+                                        <span class="badge {{ 'bg-success' if user.is_active else 'bg-danger' }}">
+                                            {{ '正常' if user.is_active else '已封禁' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary edit-user" data-id="{{ user.id }}">
+                                            <i class="bi bi-pencil"></i> 编辑
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-user" data-id="{{ user.id }}">
+                                            <i class="bi bi-trash"></i> 删除
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑用户模态框 -->
+<div class="modal fade" id="editUserModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm">
+                    <input type="hidden" id="userId">
+                    <div class="mb-3">
+                        <label class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">密码（留空则不修改）</label>
+                        <input type="password" class="form-control" id="password">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="isActive">
+                            <label class="form-check-label" for="isActive">账号状态（开启表示正常，关闭表示封禁）</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveUser">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 编辑用户
+    document.querySelectorAll('.edit-user').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.id;
+            fetch(`/admin/users/${userId}`)
+                .then(response => response.json())
+                .then(res => {
+                    if (res.code === 200) {
+                        document.getElementById('userId').value = res.data.id;
+                        document.getElementById('username').value = res.data.username;
+                        document.getElementById('isActive').checked = res.data.is_active;
+                        const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+                        editModal.show();
+                    } else {
+                        showAlert(res.msg, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('获取用户信息失败，请稍后重试', 'error');
+                });
+        });
+    });
+
+    // 保存用户信息
+    document.getElementById('saveUser').addEventListener('click', function() {
+        const userId = document.getElementById('userId').value;
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const isActive = document.getElementById('isActive').checked;
+
+        if (!username) {
+            showAlert('用户名不能为空', 'warning');
+            return;
+        }
+
+        const data = {
+            username: username,
+            is_active: isActive
+        };
+
+        if (password) {
+            data.password = password;
+        }
+
+        fetch(`/admin/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(res => {
+            if (res.code === 200) {
+                const editModal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+                editModal.hide();
+                showAlert('更新成功', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showAlert(res.msg, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('更新失败，请稍后重试', 'error');
+        });
+    });
+
+    // 删除用户
+    document.querySelectorAll('.delete-user').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.id;
+            showConfirm('确定要删除该用户吗？删除后将同时删除该用户的所有订单记录！', (confirmed) => {
+                if (confirmed) {
+                    fetch(`/admin/users/${userId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(res => {
+                        if (res.code === 200) {
+                            showAlert('删除成功', 'success');
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            showAlert(res.msg, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showAlert('删除失败，请稍后重试', 'error');
+                    });
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 

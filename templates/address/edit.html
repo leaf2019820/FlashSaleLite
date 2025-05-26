@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}编辑地址{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">编辑地址</h1>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="receiver" class="form-label">收货人</label>
+            <input type="text" class="form-control" id="receiver" name="receiver" value="{{ address.receiver }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="phone" class="form-label">联系电话</label>
+            <input type="tel" class="form-control" id="phone" name="phone" value="{{ address.phone }}" pattern="[0-9]{11}" required>
+            <div class="form-text">请输入11位手机号码</div>
+        </div>
+        <div class="mb-3">
+            <label for="detail" class="form-label">详细地址</label>
+            <textarea class="form-control" id="detail" name="detail" rows="3" required>{{ address.detail }}</textarea>
+        </div>
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="is_default" name="is_default" {% if address.is_default %}checked{% endif %}>
+            <label class="form-check-label" for="is_default">设为默认地址</label>
+        </div>
+        <button type="submit" class="btn btn-primary">保存修改</button>
+    </form>
+</div>
+{% endblock %}

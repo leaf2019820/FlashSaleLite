@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>订单列表</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #333;
+        }
+        .header p {
+            margin: 5px 0;
+            color: #666;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+        th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 12px;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>订单列表</h1>
+        <p>导出时间：{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>订单号</th>
+                <th>用户名</th>
+                <th>商品名称</th>
+                <th>数量</th>
+                <th>订单金额</th>
+                <th>支付方式</th>
+                <th>订单状态</th>
+                <th>创建时间</th>
+                <th>收货人</th>
+                <th>联系电话</th>
+                <th>收货地址</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.order_number }}</td>
+                <td>{{ order.user.username }}</td>
+                <td>{{ order.goods.name }}</td>
+                <td>{{ order.quantity }}</td>
+                <td>¥{{ order.total_amount }}</td>
+                <td>{{ order.payment_method }}</td>
+                <td>{{ order.status_text }}</td>
+                <td>{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>{{ order.address.receiver_name }}</td>
+                <td>{{ order.address.phone }}</td>
+                <td>{{ order.address.province }} {{ order.address.city }} {{ order.address.district }} {{ order.address.detail_address }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>第 1 页，共 1 页</p>
+        <p>© {{ now.year }} 闪购系统</p>
+    </div>
+</body>
+</html> 

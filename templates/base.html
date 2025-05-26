@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秒杀系统 - {% block title %}{% endblock %}</title>
+    <!-- 屏蔽 favicon 请求 -->
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <!-- Bootstrap 5.2.3 CSS -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+
+    <style>
+        /* 防止滚动条抖动 */
+        html {
+            overflow-y: auto;
+        }
+
+        /* 隐藏滚动条但保持滚动功能 */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* 为Firefox隐藏滚动条 */
+        * {
+            scrollbar-width: none;
+        }
+        
+        /* 为IE隐藏滚动条 */
+        * {
+            -ms-overflow-style: none;
+        }
+
+        /* 导航栏样式优化 */
+        .navbar {
+            background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%) !important;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+        }
+
+        /* 为固定导航栏添加内容偏移 */
+        body {
+            padding-top: 76px; /* 导航栏高度 + 一些额外空间 */
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #fff !important;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            margin: 0 0.2rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #fff !important;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-link.active {
+            color: #fff !important;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+        }
+
+        .dropdown-item {
+            padding: 0.6rem 1rem;
+            border-radius: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .navbar-toggler {
+            border: none;
+            padding: 0.5rem;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.9%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* 全局提示容器样式 */
+        .global-alert {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 8px 16px;
+            border-radius: 30px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1050;
+            width: fit-content;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        .global-alert.show {
+            opacity: 1;
+        }
+
+        /* 主要内容区域样式 */
+        main.container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        .alert-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: none;
+            min-width: 300px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            background: white;
+            border-left: 4px solid #007bff;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .alert-toast.show {
+            display: block;
+        }
+
+        .alert-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #007bff;
+            position: relative;
+        }
+
+        .alert-icon:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: white;
+        }
+
+        .alert-message {
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* 不同类型的提示样式 */
+        .alert-toast.success {
+            border-left-color: #28a745;
+        }
+        .alert-toast.success .alert-icon {
+            background: #28a745;
+        }
+
+        .alert-toast.error {
+            border-left-color: #dc3545;
+        }
+        .alert-toast.error .alert-icon {
+            background: #dc3545;
+        }
+
+        .alert-toast.warning {
+            border-left-color: #ffc107;
+        }
+        .alert-toast.warning .alert-icon {
+            background: #ffc107;
+        }
+
+        .alert-toast.info {
+            border-left-color: #17a2b8;
+        }
+        .alert-toast.info .alert-icon {
+            background: #17a2b8;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+            to {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-lightning-charge-fill me-2"></i>秒杀商城
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'index' }}" href="/">
+                            <i class="bi bi-house-door me-1"></i>商城首页
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {{ 'active' if request.endpoint == 'goods_category' }}" 
+                           href="#" id="categoryDropdown" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-grid me-1"></i>商品分类
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+                            {% for category in categories %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('admin.admin_goods_category', category_id=category.id) }}">
+                                    <i class="bi bi-tag me-2"></i>{{ category.name }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'seckill_list' }}" href="/seckill/list">
+                            <i class="bi bi-lightning me-1"></i>秒杀专区
+                        </a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'order_list' }}" href="/order/list">
+                            <i class="bi bi-bag me-1"></i>我的订单
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'address_list' }}" href="/address/list">
+                            <i class="bi bi-geo-alt me-1"></i>我的地址
+                        </a>
+                    </li>
+                    {% if current_user.role == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'admin' }}" href="/admin">
+                            <i class="bi bi-gear me-1"></i>管理后台
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                            <i class="bi bi-key me-1"></i>修改密码
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">
+                            <i class="bi bi-box-arrow-right me-1"></i>退出登录
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>登录
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/register">
+                            <i class="bi bi-person-plus me-1"></i>注册
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- 全局提示容器 -->
+    <div id="globalAlert" class="position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1050; display: none;">
+        <div class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认弹窗 -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">确认操作</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="confirmButton">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要内容 -->
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+    <script>
+        // 全局提示函数
+        function showAlert(message, type = 'info', duration = 3000) {
+            const alertEl = document.getElementById('globalAlert');
+            const toastEl = alertEl.querySelector('.toast');
+            const toastBody = toastEl.querySelector('.toast-body');
+            
+            // 设置提示类型样式
+            toastEl.className = 'toast align-items-center text-white border-0';
+            switch(type) {
+                case 'success':
+                    toastEl.classList.add('bg-success');
+                    break;
+                case 'error':
+                case 'danger':
+                    toastEl.classList.add('bg-danger');
+                    break;
+                case 'warning':
+                    toastEl.classList.add('bg-warning');
+                    break;
+                default:
+                    toastEl.classList.add('bg-info');
+            }
+            
+            // 设置提示内容
+            toastBody.textContent = message;
+            
+            // 显示提示
+            alertEl.style.display = 'block';
+            const toast = new bootstrap.Toast(toastEl, {
+                autohide: true,
+                delay: duration
+            });
+            toast.show();
+            
+            // 监听隐藏事件
+            toastEl.addEventListener('hidden.bs.toast', () => {
+                alertEl.style.display = 'none';
+            });
+        }
+
+        // 确认弹窗函数
+        function showConfirm(message, callback) {
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            const confirmMessage = document.getElementById('confirmMessage');
+            const confirmButton = document.getElementById('confirmButton');
+            
+            confirmMessage.textContent = message;
+            
+            // 移除之前的事件监听器
+            const newConfirmButton = confirmButton.cloneNode(true);
+            confirmButton.parentNode.replaceChild(newConfirmButton, confirmButton);
+            
+            // 添加新的事件监听器
+            newConfirmButton.addEventListener('click', () => {
+                confirmModal.hide();
+                callback(true);
+            });
+            
+            confirmModal.show();
+        }
+
+        // 处理Flash消息
+        window.addEventListener('load', () => {
+            const messages = {{ get_flashed_messages()|tojson }};
+            if (messages.length > 0 && window.location.pathname !== '/login') {
+                showAlert(messages[0], 'info');
+            }
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+
+    <!-- 修改密码模态框 -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="changePasswordModalLabel">
+                        <i class="bi bi-key me-2"></i>修改密码
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changePasswordForm" class="needs-validation" novalidate>
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="oldPassword" name="old_password" required>
+                            <label for="oldPassword">原密码</label>
+                            <div class="invalid-feedback">请输入原密码</div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="newPassword" name="new_password" required>
+                            <label for="newPassword">新密码</label>
+                            <div class="invalid-feedback">请输入新密码</div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
+                            <label for="confirmPassword">确认新密码</label>
+                            <div class="invalid-feedback">请再次输入新密码</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="submitChangePassword">确认修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 修改密码表单提交
+        document.getElementById('submitChangePassword').addEventListener('click', function() {
+            const form = document.getElementById('changePasswordForm');
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // 表单验证
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
+            // 验证两次密码是否一致
+            if (newPassword !== confirmPassword) {
+                showAlert('两次输入的密码不一致', 'error');
+                return;
+            }
+
+            const formData = new FormData(form);
+            fetch('/user/change-password', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(text => {
+                try {
+                    const data = JSON.parse(text);
+                    if (data.code === 200) {
+                        showAlert(data.msg, 'success');
+                        // 关闭模态框
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
+                        modal.hide();
+                        // 延迟跳转到登录页
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 1500);
+                    } else {
+                        showAlert(data.msg, 'error');
+                    }
+                } catch (e) {
+                    // 如果不是 JSON 格式，说明是重定向响应
+                    window.location.href = '/login';
+                }
+            })
+            .catch(error => {
+                showAlert('修改密码失败，请稍后重试', 'error');
+            });
+        });
+
+        // 重置表单验证状态
+        document.getElementById('changePasswordModal').addEventListener('hidden.bs.modal', function () {
+            const form = document.getElementById('changePasswordForm');
+            form.classList.remove('was-validated');
+            form.reset();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}订单详情{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">订单详情</h2>
+                <div>
+                    <a href="{{ url_for('admin.order_list') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> 返回列表
+                    </a>
+                    <button type="button" class="btn btn-primary" onclick="window.print()">
+                        <i class="bi bi-printer"></i> 打印订单
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 订单基本信息 -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">订单信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>订单编号：</strong>{{ order.order_number }}</p>
+                            <p><strong>下单时间：</strong>{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                            <p><strong>订单状态：</strong>
+                                <span class="badge bg-{{ order.status_color }}">{{ order.status_text }}</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>支付方式：</strong>{{ order.payment_method }}</p>
+                            <p><strong>支付时间：</strong>
+                                {% if order.pay_time %}
+                                {{ order.pay_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                                {% else %}
+                                未支付
+                                {% endif %}
+                            </p>
+                            <p><strong>发货时间：</strong>
+                                {% if order.ship_time %}
+                                {{ order.ship_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                                {% else %}
+                                未发货
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 商品信息 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">商品信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>商品图片</th>
+                                    <th>商品名称</th>
+                                    <th>单价</th>
+                                    <th>数量</th>
+                                    <th>小计</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <img src="{{ url_for('static', filename=order.goods.photo_url) }}" 
+                                             class="img-thumbnail" style="width: 80px;">
+                                    </td>
+                                    <td>{{ order.goods.name }}</td>
+                                    <td>¥{{ order.goods.price }}</td>
+                                    <td>{{ order.quantity }}</td>
+                                    <td>¥{{ order.total_amount }}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>订单总额：</strong></td>
+                                    <td><strong>¥{{ order.total_amount }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 收货信息 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">收货信息</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>收货人：</strong>{{ order.address.receiver_name }}</p>
+                    <p><strong>联系电话：</strong>{{ order.address.phone }}</p>
+                    <p><strong>收货地址：</strong>
+                        {{ order.address.province }} {{ order.address.city }} 
+                        {{ order.address.district }} {{ order.address.detail_address }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 订单操作和备注 -->
+        <div class="col-md-4">
+            <!-- 订单操作 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">订单操作</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if order.status == 'paid' %}
+                        <button type="button" class="btn btn-primary" 
+                                onclick="updateOrderStatus('{{ order.id }}', 'shipped')">
+                            <i class="bi bi-truck"></i> 发货
+                        </button>
+                        {% endif %}
+                        {% if order.status == 'shipped' %}
+                        <button type="button" class="btn btn-success" 
+                                onclick="updateOrderStatus('{{ order.id }}', 'completed')">
+                            <i class="bi bi-check-circle"></i> 完成订单
+                        </button>
+                        {% endif %}
+                        {% if order.status in ['pending', 'paid'] %}
+                        <button type="button" class="btn btn-danger" 
+                                onclick="updateOrderStatus('{{ order.id }}', 'cancelled')">
+                            <i class="bi bi-x-circle"></i> 取消订单
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 订单备注 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">订单备注</h5>
+                </div>
+                <div class="card-body">
+                    <form id="remarkForm" class="mb-3">
+                        <input type="hidden" name="order_id" value="{{ order.id }}">
+                        <div class="mb-3">
+                            <textarea class="form-control" name="content" rows="3" required 
+                                      placeholder="请输入备注内容"></textarea>
+                        </div>
+                        <button type="button" class="btn btn-primary w-100" onclick="submitRemark()">
+                            添加备注
+                        </button>
+                    </form>
+                    <div class="remarks-list">
+                        {% for remark in order.remarks %}
+                        <div class="remark-item mb-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="text-muted">
+                                        {{ remark.create_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                                    </small>
+                                    <p class="mb-0">{{ remark.content }}</p>
+                                </div>
+                                <small class="text-muted">{{ remark.admin.username }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 状态变更记录 -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">状态变更记录</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for log in order.status_logs %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-0">{{ log.status_text }}</h6>
+                                <small class="text-muted">
+                                    {{ log.create_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                                </small>
+                                {% if log.remark %}
+                                <p class="mb-0 mt-1">{{ log.remark }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 更新订单状态
+function updateOrderStatus(orderId, status) {
+    if (!confirm('确定要更新订单状态吗？')) return;
+    
+    fetch(`/admin/orders/${orderId}/status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.code === 200) {
+            alert('更新成功');
+            location.reload();
+        } else {
+            alert(data.msg || '更新失败');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('操作失败，请重试');
+    });
+}
+
+// 提交备注
+function submitRemark() {
+    const form = document.getElementById('remarkForm');
+    const formData = new FormData(form);
+    
+    fetch('/admin/orders/remark', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.code === 200) {
+            alert('备注添加成功');
+            location.reload();
+        } else {
+            alert(data.msg || '添加失败');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('操作失败，请重试');
+    });
+}
+</script>
+
+<style>
+/* 时间线样式 */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #0d6efd;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #0d6efd;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 12px;
+    height: calc(100% - 12px);
+    width: 2px;
+    background: #e9ecef;
+}
+
+/* 打印样式 */
+@media print {
+    .btn, .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+    }
+    
+    .card-header {
+        background: none !important;
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+}
+</style>
+{% endblock %} 

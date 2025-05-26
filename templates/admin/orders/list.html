@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}订单管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">今日订单</h5>
+                    <h2 class="card-text">{{ today_orders_count }}</h2>
+                    <p class="card-text">总金额: ¥{{ today_orders_amount }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">本月订单</h5>
+                    <h2 class="card-text">{{ month_orders_count }}</h2>
+                    <p class="card-text">总金额: ¥{{ month_orders_amount }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">待处理订单</h5>
+                    <h2 class="card-text">{{ pending_orders_count }}</h2>
+                    <p class="card-text">待发货: {{ to_be_shipped_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">已取消订单</h5>
+                    <h2 class="card-text">{{ cancelled_orders_count }}</h2>
+                    <p class="card-text">本月取消: {{ cancelled_orders_count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选表单 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="searchForm" method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">订单状态</label>
+                    <select name="status" class="form-select">
+                        <option value="">全部</option>
+                        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>待付款</option>
+                        <option value="paid" {% if request.args.get('status') == 'paid' %}selected{% endif %}>待发货</option>
+                        <option value="shipped" {% if request.args.get('status') == 'shipped' %}selected{% endif %}>已发货</option>
+                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>已完成</option>
+                        <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>已取消</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">订单号/用户名</label>
+                    <input type="text" name="keyword" class="form-control" value="{{ request.args.get('keyword', '') }}" placeholder="搜索订单号或用户名">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="submit" class="btn btn-primary">搜索</button>
+                        <button type="button" class="btn btn-secondary" onclick="resetSearch()">重置</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 订单列表 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAll"></th>
+                            <th>订单号</th>
+                            <th>用户名</th>
+                            <th>商品信息</th>
+                            <th>订单金额</th>
+                            <th>支付方式</th>
+                            <th>订单状态</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if orders %}
+                            {% for order in orders %}
+                            <tr>
+                                <td><input type="checkbox" class="order-checkbox" value="{{ order.id }}"></td>
+                                <td>{{ order.order_number }}</td>
+                                <td>{{ order.user.username }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename=order.goods.photo_url) }}" 
+                                             class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                        <div>
+                                            <div>{{ order.goods.name }}</div>
+                                            <small class="text-muted">数量: {{ order.quantity }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>¥{{ order.total_amount }}</td>
+                                <td>{{ order.payment_method }}</td>
+                                <td>
+                                    <span class="badge bg-{{ order.status_color }}">
+                                        {{ order.status_text }}
+                                    </span>
+                                </td>
+                                <td>{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('admin.order_detail', order_id=order.id) }}" 
+                                           class="btn btn-sm btn-info">详情</a>
+                                        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" 
+                                                data-bs-toggle="dropdown">
+                                            操作
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            {% if order.status == 'paid' %}
+                                            <li><a class="dropdown-item" href="#" 
+                                                   onclick="updateOrderStatus('{{ order.id }}', 'shipped')">发货</a></li>
+                                            {% endif %}
+                                            {% if order.status == 'shipped' %}
+                                            <li><a class="dropdown-item" href="#" 
+                                                   onclick="updateOrderStatus('{{ order.id }}', 'completed')">完成</a></li>
+                                            {% endif %}
+                                            {% if order.status in ['pending', 'paid'] %}
+                                            <li><a class="dropdown-item" href="#" 
+                                                   onclick="updateOrderStatus('{{ order.id }}', 'cancelled')">取消</a></li>
+                                            {% endif %}
+                                            <li><a class="dropdown-item" href="#" 
+                                                   onclick="showRemarkModal('{{ order.id }}')">添加备注</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        当前暂无订单~
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            {% if pagination.pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.order_list', page=pagination.prev_num, **request.args) }}">
+                            上一页
+                        </a>
+                    </li>
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('admin.order_list', page=page, **request.args) }}">
+                                    {{ page }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.order_list', page=pagination.next_num, **request.args) }}">
+                            下一页
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 备注模态框 -->
+<div class="modal fade" id="remarkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加订单备注</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="remarkForm">
+                    <input type="hidden" id="orderId" name="order_id">
+                    <div class="mb-3">
+                        <label class="form-label">备注内容</label>
+                        <textarea class="form-control" id="remarkContent" name="content" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitRemark()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 重置搜索条件
+function resetSearch() {
+    // 清空搜索表单
+    document.querySelector('select[name="status"]').value = '';
+    document.querySelector('input[name="keyword"]').value = '';
+    // 提交表单
+    document.getElementById('searchForm').submit();
+}
+
+// 全选/取消全选
+document.getElementById('selectAll').addEventListener('change', function() {
+    document.querySelectorAll('.order-checkbox').forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+// 更新订单状态
+function updateOrderStatus(orderId, status) {
+    showConfirm('确定要更新订单状态吗？', function(confirmed) {
+        if (!confirmed) return;
+        
+        fetch(`/admin/orders/${orderId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                status: status,
+                remark: ''  // 可以添加备注字段
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code === 200) {
+                showAlert('更新成功', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert(data.msg || '更新失败', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('操作失败，请重试', 'error');
+        });
+    });
+}
+
+// 显示备注模态框
+function showRemarkModal(orderId) {
+    document.getElementById('orderId').value = orderId;
+    document.getElementById('remarkContent').value = '';
+    const modal = new bootstrap.Modal(document.getElementById('remarkModal'));
+    modal.show();
+}
+
+// 提交备注
+function submitRemark() {
+    const form = document.getElementById('remarkForm');
+    const formData = new FormData(form);
+    
+    fetch('/admin/orders/remark', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.code === 200) {
+            showAlert('备注添加成功', 'success');
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('remarkModal'));
+            modal.hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert(data.msg || '添加失败', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('操作失败，请重试', 'error');
+    });
+}
+</script>
+{% endblock %}

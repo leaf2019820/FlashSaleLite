@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}添加商品{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>添加商品</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="row">
+            <div class="col-md-6">
+                <!-- 基本信息 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">基本信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">商品名称</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">商品描述</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="category_id" class="form-label">商品分类</label>
+                            <select class="form-select" id="category_id" name="category_id" required>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 价格和库存 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">价格和库存</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="price" class="form-label">商品价格</label>
+                            <input type="number" class="form-control" id="price" name="price" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="original_price" class="form-label">原价</label>
+                            <input type="number" class="form-control" id="original_price" name="original_price" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="stock" class="form-label">库存数量</label>
+                            <input type="number" class="form-control" id="stock" name="stock" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <!-- 商品规格 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">商品规格</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="brand" class="form-label">品牌</label>
+                            <input type="text" class="form-control" id="brand" name="brand">
+                        </div>
+                        <div class="mb-3">
+                            <label for="model" class="form-label">型号</label>
+                            <input type="text" class="form-control" id="model" name="model">
+                        </div>
+                        <div class="mb-3">
+                            <label for="weight" class="form-label">重量(kg)</label>
+                            <input type="number" class="form-control" id="weight" name="weight" step="0.01">
+                        </div>
+                        <div class="mb-3">
+                            <label for="dimensions" class="form-label">尺寸(长x宽x高)</label>
+                            <input type="text" class="form-control" id="dimensions" name="dimensions" placeholder="例如: 10x20x30">
+                        </div>
+                        <div class="mb-3">
+                            <label for="material" class="form-label">材质</label>
+                            <input type="text" class="form-control" id="material" name="material">
+                        </div>
+                        <div class="mb-3">
+                            <label for="warranty" class="form-label">保修信息</label>
+                            <input type="text" class="form-control" id="warranty" name="warranty">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 商品图片 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">商品图片</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="photo" class="form-label">上传商品图片</label>
+                            <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">添加商品</button>
+            <a href="{{ url_for('admin.admin_goods_list') }}" class="btn btn-secondary">返回列表</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

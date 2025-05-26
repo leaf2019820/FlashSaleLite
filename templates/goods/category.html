@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category.name }} - 商品分类{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">{{ category.name }}</h2>
+    {% if category.description %}
+    <p class="text-muted mb-4">{{ category.description }}</p>
+    {% endif %}
+    
+    <!-- 商品列表 -->
+    <div class="row">
+        {% for goods in goods_list %}
+        <div class="col-md-2-4 mb-4">
+            <a href="{{ url_for('goods_detail', goods_id=goods.id) }}" class="text-decoration-none card-link">
+                <div class="card h-100">
+                    <img src="{{ url_for('static', filename=goods.photo_url) if goods.photo_url else 'https://placehold.co/300x200' }}"
+                        class="card-img-top" alt="{{ goods.name }}" style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title text-truncate">{{ goods.name }}</h5>
+                        <p class="card-text text-truncate">{{ goods.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-danger h5 mb-0">¥{{ goods.price }}</span>
+                            <span class="btn btn-outline-primary">立即查看</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 分页导航 -->
+    {% if total_pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <!-- 上一页 -->
+            <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('admin.admin_goods_category', category_id=category.id, page=current_page-1) if current_page > 1 else '#' }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            
+            <!-- 页码 -->
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {% if p == current_page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('admin.admin_goods_category', category_id=category.id, page=p) }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+            
+            <!-- 下一页 -->
+            <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('admin.admin_goods_category', category_id=category.id, page=current_page+1) if current_page < total_pages else '#' }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+
+            <!-- 跳转到指定页 -->
+            <li class="page-item ms-2">
+                <div class="input-group" style="width: 150px;">
+                    <input type="number" class="form-control" id="pageInput" min="1" max="{{ total_pages }}" placeholder="页码">
+                    <button class="btn btn-outline-primary" type="button" onclick="goToPage()">跳转</button>
+                </div>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- 添加自定义样式 -->
+<style>
+.col-md-2-4 {
+    flex: 0 0 20%;
+    max-width: 20%;
+    padding: 0 15px;
+}
+.cursor-pointer {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+    
+.cursor-pointer:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.card-link {
+    color: inherit;
+}
+    
+.card-link:hover {
+    color: inherit;
+    text-decoration: none;
+}
+</style>
+
+<script>
+    // 添加跳转页面的函数
+    function goToPage() {
+        const pageInput = document.getElementById('pageInput');
+        const page = parseInt(pageInput.value);
+        const totalPages = {{ total_pages }};
+        
+        if (page && page >= 1 && page <= totalPages) {
+            window.location.href = "{{ url_for('admin.admin_goods_category', category_id=category.id) }}?page=" + page;
+        } else {
+            alert('请输入有效的页码（1-' + totalPages + '）');
+        }
+    }
+
+    // 添加回车键跳转功能
+    document.getElementById('pageInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            goToPage();
+        }
+    });
+</script>
+{% endblock %}

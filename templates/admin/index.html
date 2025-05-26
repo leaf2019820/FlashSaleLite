@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}管理后台{% endblock %}
+
+{% block styles %}
+<style>
+    .admin-dashboard {
+        background-color: #f8f9fa;
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
+        background: linear-gradient(87deg, #11cdef 0, #1171ef 100%) !important;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        color: white;
+    }
+
+    .dashboard-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .dashboard-subtitle {
+        opacity: 0.8;
+        font-size: 1rem;
+    }
+
+    .feature-card {
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .card-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .card-icon.users { color: #4e73df; }
+    .card-icon.seckill { color: #1cc88a; }
+    .card-icon.goods { color: #36b9cc; }
+    .card-icon.category { color: #f6c23e; }
+    .card-icon.orders { color: #e74a3b; }
+
+    .card-link {
+        text-decoration: none;
+    }
+
+    .card-link:hover {
+        text-decoration: none;
+    }
+
+    .card-link .btn {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .card-link:hover .btn {
+        transform: translateX(5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <!-- 页面头部 -->
+    <div class="dashboard-header">
+        <div class="container">
+            <h1 class="dashboard-title">管理后台</h1>
+            <p class="dashboard-subtitle">欢迎使用秒杀系统管理后台，在这里您可以管理所有系统功能</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row g-4">
+            <!-- 用户管理卡片 -->
+            <div class="col-xl-4 col-md-6">
+                <div class="card shadow-sm h-100 feature-card">
+                    <div class="card-body">
+                        <div class="card-icon users">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h5 class="card-title text-primary">用户管理</h5>
+                        <p class="card-text text-muted">管理系统用户账号，包括添加、编辑和删除用户。您可以查看用户状态，管理用户权限。</p>
+                        <a href="{{ url_for('admin_user_list') }}" class="card-link">
+                            <button class="btn btn-outline-primary">
+                                进入管理 <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 秒杀活动管理卡片 -->
+            <div class="col-xl-4 col-md-6">
+                <div class="card shadow-sm h-100 feature-card">
+                    <div class="card-body">
+                        <div class="card-icon seckill">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h5 class="card-title text-success">秒杀活动管理</h5>
+                        <p class="card-text text-muted">创建和管理秒杀活动，设置活动时间、商品和库存。实时监控活动状态和销售情况。</p>
+                        <a href="/admin/seckill/list" class="card-link">
+                            <button class="btn btn-outline-success">
+                                进入管理 <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 商品管理卡片 -->
+            <div class="col-xl-4 col-md-6">
+                <div class="card shadow-sm h-100 feature-card">
+                    <div class="card-body">
+                        <div class="card-icon goods">
+                            <i class="fas fa-shopping-bag"></i>
+                        </div>
+                        <h5 class="card-title text-info">商品管理</h5>
+                        <p class="card-text text-muted">管理平台商品信息，包括添加新商品、编辑商品详情、管理商品库存和价格。</p>
+                        <a href="/admin/goods/list" class="card-link">
+                            <button class="btn btn-outline-info">
+                                进入管理 <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 商品分类管理卡片 -->
+            <div class="col-xl-4 col-md-6">
+                <div class="card shadow-sm h-100 feature-card">
+                    <div class="card-body">
+                        <div class="card-icon category">
+                            <i class="fas fa-tags"></i>
+                        </div>
+                        <h5 class="card-title text-warning">商品分类管理</h5>
+                        <p class="card-text text-muted">管理商品分类体系，创建和编辑分类，优化商品展示结构，提升用户体验。</p>
+                        <a href="/admin/category/list" class="card-link">
+                            <button class="btn btn-outline-warning">
+                                进入管理 <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 订单管理卡片 -->
+            <div class="col-xl-4 col-md-6">
+                <div class="card shadow-sm h-100 feature-card">
+                    <div class="card-body">
+                        <div class="card-icon orders">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <h5 class="card-title text-danger">订单管理</h5>
+                        <p class="card-text text-muted">查看和管理所有订单信息，处理订单状态，跟踪物流信息，处理退款申请。</p>
+                        <a href="/admin/orders/list" class="card-link">
+                            <button class="btn btn-outline-danger">
+                                进入管理 <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}秒杀活动列表{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0 text-gray-800">秒杀活动列表</h2>
+        <a href="/admin/seckill/create" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>创建新活动
+        </a>
+    </div>
+
+    {% if activities %}
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="border-0">商品名称</th>
+                            <th class="border-0">秒杀价</th>
+                            <th class="border-0">开始时间</th>
+                            <th class="border-0">结束时间</th>
+                            <th class="border-0">总库存</th>
+                            <th class="border-0 text-end">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in activities %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="ms-3">
+                                        <p class="fw-bold mb-0">{{ activity.goods.name }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-danger">¥{{ activity.seckill_price }}</span></td>
+                            <td>{{ activity.start_time_str }}</td>
+                            <td>{{ activity.end_time_str }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ activity.total_stock }}</span>
+                            </td>
+                            <td class="text-end">
+                                <a href="/admin/seckill/update/{{ activity.id }}" class="btn btn-sm btn-outline-primary me-2">
+                                    <i class="bi bi-pencil me-1"></i>编辑
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-seckill-btn"
+                                    data-seckill-id="{{ activity.id }}">
+                                    <i class="bi bi-trash me-1"></i>删除
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页导航 -->
+            {% if pagination.pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center align-items-center">
+                    <!-- 上一页 -->
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.admin_seckill_list', page=pagination.prev_num) if pagination.has_prev else '#' }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    
+                    <!-- 页码 -->
+                    {% for p in range(1, pagination.pages + 1) %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.admin_seckill_list', page=p) }}">{{ p }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    <!-- 下一页 -->
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.admin_seckill_list', page=pagination.next_num) if pagination.has_next else '#' }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+
+                    <!-- 页码跳转 -->
+                    <li class="page-item ms-3">
+                        <div class="input-group" style="width: 150px;">
+                            <input type="number" class="form-control" id="pageInput" min="1" max="{{ pagination.pages }}" 
+                                   placeholder="页码" aria-label="页码">
+                            <button class="btn btn-outline-primary" type="button" onclick="goToPage()">
+                                <i class="bi bi-arrow-right"></i> 跳转
+                            </button>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-calendar-x" style="font-size: 4rem; color: #6c757d;"></i>
+            </div>
+            <h4 class="text-muted mb-3">暂无秒杀活动</h4>
+            <p class="text-muted mb-4">创建秒杀活动可以吸引更多用户参与，提升商品销量</p>
+            <a href="/admin/seckill/create" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i>立即创建秒杀活动
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 自定义删除确认模态框 -->
+<div class="modal fade" id="deleteSeckillModal" tabindex="-1" aria-labelledby="deleteSeckillModalLabel">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteSeckillModalLabel">
+                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>删除确认
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    警告！删除的秒杀活动不可找回！请慎重考虑！
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmSeckillDelete">
+                    <i class="bi bi-trash me-1"></i>确认删除
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof bootstrap === 'undefined') {
+            console.error('错误：Bootstrap未正确加载，请检查base.html中的JS引入路径');
+            return;
+        }
+
+        let currentSeckillId = null;
+        let currentSeckillRow = null;
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteSeckillModal'));
+
+        // 监听所有删除按钮的点击事件
+        document.querySelectorAll('.delete-seckill-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                currentSeckillId = e.target.closest('.delete-seckill-btn').dataset.seckillId;
+                currentSeckillRow = e.target.closest('tr');
+                if (!currentSeckillId) {
+                    console.error('错误：data-seckill-id未正确设置');
+                    alert('系统异常：未获取到秒杀活动ID');
+                    return;
+                }
+                deleteModal.show();
+            });
+        });
+
+        // 确认删除按钮点击事件
+        document.getElementById('confirmSeckillDelete').addEventListener('click', async () => {
+            if (!currentSeckillId) return;
+
+            try {
+                const response = await fetch(`/admin/seckill/delete/${currentSeckillId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                if (data.code === 200) {
+                    deleteModal.hide();
+                    if (currentSeckillRow) {
+                        currentSeckillRow.style.transition = 'all 0.3s ease';
+                        currentSeckillRow.style.opacity = '0';
+                        setTimeout(() => currentSeckillRow.remove(), 300);
+                    }
+                    showAlert('秒杀活动删除成功', 'success');
+                } else {
+                    showAlert(data.msg || '删除失败', 'error');
+                }
+            } catch (error) {
+                console.error('删除请求异常：', error);
+                showAlert('系统异常：删除请求失败', 'error');
+            }
+        });
+
+        // 页码跳转功能
+        document.getElementById('pageInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                goToPage();
+            }
+        });
+
+        window.goToPage = function() {
+            const pageInput = document.getElementById('pageInput');
+            const page = parseInt(pageInput.value);
+            const totalPages = parseInt('{{ pagination.pages }}');
+            
+            if (page && page >= 1 && page <= totalPages) {
+                window.location.href = "{{ url_for('admin.admin_seckill_list') }}?page=" + page;
+            } else {
+                alert('请输入有效的页码（1-' + totalPages + '）');
+            }
+        };
+    });
+</script>
+{% endblock %}

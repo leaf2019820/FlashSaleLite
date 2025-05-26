@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}订单详情{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- 订单状态卡片 -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-1">订单状态：<span class="badge {% if order.status == 'pending' %}bg-warning{% elif order.status == 'paid' %}bg-success{% elif order.status == 'shipped' %}bg-info{% elif order.status == 'completed' %}bg-primary{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                        {% if order.status == 'pending' %}待付款
+                        {% elif order.status == 'paid' %}已付款
+                        {% elif order.status == 'shipped' %}已发货
+                        {% elif order.status == 'completed' %}已完成
+                        {% elif order.status == 'cancelled' %}已取消
+                        {% else %}未知状态{% endif %}
+                    </span></h4>
+                    <p class="text-muted mb-0">订单编号：{{ order.id }}</p>
+                </div>
+                <div class="text-end">
+                    <p class="text-muted mb-1">下单时间：{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    {% if order.pay_time %}
+                    <p class="text-muted mb-0">支付时间：{{ order.pay_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 收货信息 -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0"><i class="bi bi-geo-alt text-primary me-2"></i>收货信息</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-2"><strong>收货人：</strong>{{ order.address.receiver_name }}</p>
+                    <p class="mb-2"><strong>联系电话：</strong>{{ order.address.phone }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-2"><strong>收货地址：</strong></p>
+                    <p class="mb-0 text-muted">
+                        {{ order.address.province }} {{ order.address.city }} {{ order.address.district }}<br>
+                        {{ order.address.detail_address }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品信息 -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0"><i class="bi bi-box-seam text-primary me-2"></i>商品信息</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 60%">商品信息</th>
+                            <th class="text-center">单价</th>
+                            <th class="text-center">数量</th>
+                            <th class="text-end">小计</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ url_for('static', filename=order.goods.photo_url) if order.goods.photo_url else 'https://placehold.co/100x100' }}"
+                                         alt="{{ order.goods.name }}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                                    <div class="ms-3">
+                                        <h6 class="mb-1">{{ order.goods.name }}</h6>
+                                        <p class="text-muted small mb-0">{{ order.goods.description }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">¥{{ order.goods.price }}</td>
+                            <td class="text-center">{{ order.quantity }}</td>
+                            <td class="text-end">¥{{ order.total_amount }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 订单金额 -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0"><i class="bi bi-currency-yen text-primary me-2"></i>订单金额</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row justify-content-end">
+                <div class="col-md-4">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted">商品总额：</td>
+                            <td class="text-end">¥{{ order.total_amount }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">运费：</td>
+                            <td class="text-end">¥0.00</td>
+                        </tr>
+                        <tr class="border-top">
+                            <td><strong>实付金额：</strong></td>
+                            <td class="text-end"><strong class="text-danger">¥{{ order.total_amount }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 支付信息 -->
+    {% if order.pay_time %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0"><i class="bi bi-credit-card text-primary me-2"></i>支付信息</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-2"><strong>支付方式：</strong>{{ order.payment_method }}</p>
+                    <p class="mb-0"><strong>支付时间：</strong>{{ order.pay_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-2"><strong>交易流水号：</strong>{{ order.transaction_id }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 操作按钮 -->
+    <div class="d-flex justify-content-end gap-2 mb-5">
+        <a href="{{ url_for('order_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>返回订单列表
+        </a>
+        {% if order.status == 'pending' %}
+        <button class="btn btn-primary" onclick="showPaymentModal('{{ order.id }}')">
+            <i class="bi bi-credit-card me-2"></i>确认支付
+        </button>
+        {% elif order.status == 'shipped' %}
+        <button class="btn btn-success" onclick="showConfirmReceiptModal('{{ order.id }}')">
+            <i class="bi bi-check-circle me-2"></i>确认收货
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 支付确认模态框 -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">
+                    <i class="bi bi-credit-card text-primary me-2"></i>确认支付
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="payment-icon-wrapper mb-3">
+                        <i class="bi bi-credit-card-2-front display-4 text-primary"></i>
+                    </div>
+                    <h5 class="mb-3">确认支付订单？</h5>
+                    <div class="payment-amount-wrapper p-3 bg-light rounded-3 mb-3">
+                        <p class="text-muted mb-1">订单金额</p>
+                        <h3 class="text-danger mb-0">¥{{ order.total_amount }}</h3>
+                    </div>
+                    <div class="alert alert-info d-flex align-items-center mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <span>支付完成后，订单状态将更新为"已付款"</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>取消
+                </button>
+                <button type="button" class="btn btn-primary px-4" id="confirmPayment">
+                    <i class="bi bi-check-circle me-2"></i>确认支付
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 确认收货模态框 -->
+<div class="modal fade" id="confirmReceiptModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">
+                    <i class="bi bi-check-circle text-success me-2"></i>确认收货
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="receipt-icon-wrapper mb-3">
+                        <i class="bi bi-box-seam display-4 text-success"></i>
+                    </div>
+                    <h5 class="mb-3">确认已收到商品？</h5>
+                    <div class="alert alert-info d-flex align-items-center mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <span>确认收货后，订单将完成</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>取消
+                </button>
+                <button type="button" class="btn btn-success" id="confirmReceipt">
+                    <i class="bi bi-check-circle me-2"></i>确认收货
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 全局提示 Toast -->
+<div class="position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 9999">
+    <div id="paymentToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i>
+                <span id="toastMessage">支付成功！</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentOrderId = null;
+    const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+    const paymentToast = new bootstrap.Toast(document.getElementById('paymentToast'));
+
+    function showPaymentModal(orderId) {
+        currentOrderId = orderId;
+        paymentModal.show();
+    }
+
+    document.getElementById('confirmPayment').addEventListener('click', function() {
+        if (!currentOrderId) return;
+        
+        fetch(`/order/${currentOrderId}/pay`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            paymentModal.hide();
+            
+            if (data.code === 200) {
+                // 显示成功提示
+                document.getElementById('toastMessage').textContent = data.msg;
+                paymentToast.show();
+                
+                // 延迟跳转
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 1500);
+            } else {
+                // 显示错误提示
+                document.getElementById('toastMessage').textContent = data.msg;
+                document.getElementById('paymentToast').classList.remove('bg-success');
+                document.getElementById('paymentToast').classList.add('bg-danger');
+                paymentToast.show();
+                
+                // 恢复成功样式
+                setTimeout(() => {
+                    document.getElementById('paymentToast').classList.remove('bg-danger');
+                    document.getElementById('paymentToast').classList.add('bg-success');
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            console.error('支付请求失败：', error);
+            document.getElementById('toastMessage').textContent = '支付请求失败，请稍后重试';
+            document.getElementById('paymentToast').classList.remove('bg-success');
+            document.getElementById('paymentToast').classList.add('bg-danger');
+            paymentToast.show();
+        });
+    });
+
+    function showConfirmReceiptModal(orderId) {
+        currentOrderId = orderId;
+        const modal = new bootstrap.Modal(document.getElementById('confirmReceiptModal'));
+        modal.show();
+    }
+
+    document.getElementById('confirmReceipt').addEventListener('click', async function() {
+        if (!currentOrderId) return;
+        
+        try {
+            const response = await fetch(`/order/${currentOrderId}/confirm-receipt`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.code === 200) {
+                // 关闭模态框
+                const modal = bootstrap.Modal.getInstance(document.getElementById('confirmReceiptModal'));
+                modal.hide();
+                
+                // 显示成功提示
+                document.getElementById('toastMessage').textContent = data.msg;
+                paymentToast.show();
+                
+                // 延迟刷新页面
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                // 显示错误提示
+                document.getElementById('toastMessage').textContent = data.msg;
+                document.getElementById('paymentToast').classList.remove('bg-success');
+                document.getElementById('paymentToast').classList.add('bg-danger');
+                paymentToast.show();
+                
+                // 恢复成功样式
+                setTimeout(() => {
+                    document.getElementById('paymentToast').classList.remove('bg-danger');
+                    document.getElementById('paymentToast').classList.add('bg-success');
+                }, 3000);
+            }
+        } catch (error) {
+            console.error('确认收货请求失败：', error);
+            showAlert('系统异常，请稍后重试', 'error');
+        }
+    });
+</script>
+{% endblock %}
+
+{% block head %}
+<style>
+    .card {
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .table th {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.5em 1em;
+    }
+
+    /* 支付模态框样式 */
+    .modal-content {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+        padding: 1.5rem 1.5rem 0.5rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        padding: 1rem 1.5rem 1.5rem;
+    }
+
+    .payment-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+    }
+
+    .payment-amount-wrapper {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .payment-amount-wrapper:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn {
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-light {
+        background: #f8f9fa;
+        border-color: #e9ecef;
+    }
+
+    .btn-light:hover {
+        background: #e9ecef;
+        border-color: #dee2e6;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    }
+
+    /* Toast 样式 */
+    .toast {
+        min-width: 300px;
+        background-color: rgba(40, 167, 69, 0.95) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .toast.bg-danger {
+        background-color: rgba(220, 53, 69, 0.95) !important;
+    }
+
+    .receipt-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+        border: none;
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,633 @@
+{% extends "base.html" %}
+
+{% block title %}{{ goods.name }} - 商品详情{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- 商品图片 -->
+        <div class="col-md-6">
+            <div class="position-relative">
+                <img src="{{ url_for('static', filename=goods.photo_url) if goods.photo_url else 'https://placehold.co/400x300' }}"
+                    alt="{{ goods.name }}" class="img-fluid rounded shadow" style="width: 444px; height: 444px; object-fit: cover;">
+                {% if category %}
+                
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 商品信息 -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <!-- 商品名称 -->
+                    <h1 class="h2 mb-3 fw-bold text-dark">{{ goods.name }}</h1>
+                    
+                    <!-- 商品描述 -->
+                    <p class="text-muted mb-4">{{ goods.description }}</p>
+                    <span class="badge bg-primary position-absolute top-0 end-0 m-3">
+                        <i class="bi bi-tag"></i> {{ category.name }}
+                    </span>
+                    
+                    <!-- 价格信息 -->
+                    <div class="price-section mb-4">
+                        <div class="d-flex align-items-baseline mb-2">
+                            <span class="h3 text-danger fw-bold mb-0">¥{{ goods.price }}</span>
+                            <span class="text-muted text-decoration-line-through ms-2">¥{{ goods.original_price }}</span>
+                            {% if goods.original_price and goods.price %}
+                            <span class="badge bg-danger ms-2">
+                                省 {{ "%.0f"|format((goods.original_price - goods.price) / goods.original_price * 100) }}%
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                    </div>
+
+                    <!-- 商品信息列表 -->
+                    <div class="goods-info mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-box-seam text-primary me-2"></i>
+                            <span class="text-muted">库存：</span>
+                            <span class="ms-2 fw-bold {% if goods.stock > 10 %}text-success{% elif goods.stock > 0 %}text-warning{% else %}text-danger{% endif %}">
+                                {{ goods.stock }} 件
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-graph-up text-primary me-2"></i>
+                            <span class="text-muted">销量：</span>
+                            <span class="ms-2 fw-bold">{{ goods.sales }} 件</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-calendar3 text-primary me-2"></i>
+                            <span class="text-muted">上架时间：</span>
+                            <span class="ms-2">{{ goods.create_time.strftime('%Y-%m-%d') }}</span>
+                        </div>
+                        {% if category %}
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-tag text-primary me-2"></i>
+                            <span class="text-muted">商品分类：</span>
+                            <a href="{{ url_for('admin.admin_goods_category', category_id=category.id) }}" class="ms-2 text-decoration-none">
+                                {{ category.name }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 购买按钮 -->
+                    <div class="d-grid gap-2">
+                        {% if current_user.is_authenticated %}
+                        <button class="btn btn-lg btn-primary" data-bs-toggle="modal" data-bs-target="#purchaseConfirmModal">
+                            <i class="bi bi-cart-plus me-2"></i>立即购买
+                        </button>
+                        {% else %}
+                        <a href="{{ url_for('login', next=request.url) }}" class="btn btn-lg btn-outline-primary">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>登录后购买
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品详细信息 -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">商品详情</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table">
+                                <tbody>
+                                    {% if goods.brand %}
+                                    <tr>
+                                        <th scope="row" style="width: 30%">品牌</th>
+                                        <td>{{ goods.brand }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if goods.model %}
+                                    <tr>
+                                        <th scope="row">型号</th>
+                                        <td>{{ goods.model }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if goods.material %}
+                                    <tr>
+                                        <th scope="row">材质</th>
+                                        <td>{{ goods.material }}</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table">
+                                <tbody>
+                                    {% if goods.weight %}
+                                    <tr>
+                                        <th scope="row" style="width: 30%">重量</th>
+                                        <td>{{ goods.weight }}kg</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if goods.dimensions %}
+                                    <tr>
+                                        <th scope="row">尺寸</th>
+                                        <td>{{ goods.dimensions }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if goods.warranty %}
+                                    <tr>
+                                        <th scope="row">保修</th>
+                                        <td>{{ goods.warranty }}</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 推荐商品模块 -->
+    {% if recommended_goods %}
+    <div class="mt-5">
+        <h3 class="mb-4">其他商品推荐</h3>
+        <div class="row">
+            {% for goods in recommended_goods %}
+            <div class="col-md-3 mb-4">
+                <a href="{{ url_for('goods_detail', goods_id=goods.id) }}" class="text-decoration-none card-link">
+                    <div class="card h-100">
+                        <img src="{{ url_for('static', filename=goods.photo_url) if goods.photo_url else 'https://placehold.co/300x200' }}"
+                            class="card-img-top" alt="{{ goods.name }}" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title text-truncate">{{ goods.name }}</h5>
+                            <p class="card-text text-truncate">{{ goods.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-danger h5 mb-0">¥{{ goods.price }}</span>
+                                <span class="btn btn-outline-primary">立即查看</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+<!-- 移植后的购买确认模态框 -->
+<div class="modal fade" id="purchaseConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold">确认购买</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 商品信息 -->
+                <div class="goods-info p-3 bg-light rounded mb-4">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ url_for('static', filename=goods.photo_url) if goods.photo_url else 'https://placehold.co/400x300' }}"
+                            class="rounded" style="width: 80px; height: 80px; object-fit: cover;" alt="{{ goods.name }}">
+                        <div class="ms-3">
+                            <h6 class="mb-1 text-truncate" style="max-width: 200px;">{{ goods.name }}</h6>
+                            <div class="d-flex align-items-center">
+                                <span class="text-danger fw-bold fs-5">¥{{ goods.price }}</span>
+                                <del class="text-muted ms-2">¥{{ goods.original_price }}</del>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 购买数量 -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">购买数量</label>
+                    <div class="d-flex align-items-center">
+                        <div class="input-group quantity-control" style="width: 150px;">
+                            <button class="btn btn-outline-primary" type="button" onclick="decreaseQuantity()">
+                                <i class="bi bi-dash-lg"></i>
+                            </button>
+                            <input type="number" class="form-control text-center" id="purchaseQuantity" 
+                                   value="1" min="1" max="{{ goods.stock }}" 
+                                   onchange="validateQuantity(this)">
+                            <button class="btn btn-outline-primary" type="button" onclick="increaseQuantity()">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                        <span class="ms-3 text-muted">库存：{{ goods.stock }} 件</span>
+                    </div>
+                </div>
+
+                <!-- 地址选择 -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">收货地址</label>
+                    {% if current_user.addresses %}
+                    <div class="address-list">
+                        {% for address in current_user.addresses %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input seckill-address" type="radio" 
+                                   name="address_id" id="addr_{{ address.id }}" 
+                                   value="{{ address.id }}" required>
+                            <label class="form-check-label w-100" for="addr_{{ address.id }}">
+                                <div class="address-info p-3 border rounded">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold">{{ address.receiver_name }}</span>
+                                        <span class="text-muted">{{ address.phone }}</span>
+                                    </div>
+                                    <div class="text-muted small mt-2">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        {{ address.province }} {{ address.city }} {{ address.district }}
+                                    </div>
+                                    <div class="text-muted small">
+                                        {{ address.detail_address }}
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        {% endfor %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('address.address_add') }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i>添加新地址
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning d-flex align-items-center">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <div>您还没有收货地址，请先<a href="{{ url_for('address.address_add') }}" class="alert-link">添加地址</a></div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- 支付方式 -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">支付方式</label>
+                    <div class="payment-methods">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input seckill-payment" type="radio" name="payment_method" value="alipay" required>
+                            <label class="form-check-label d-flex align-items-center">
+                                <i class="bi bi-alipay text-primary me-2" style="font-size: 24px;"></i>
+                                <span>支付宝</span>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input seckill-payment" type="radio" name="payment_method" value="wechat" required>
+                            <label class="form-check-label d-flex align-items-center">
+                                <i class="bi bi-wechat text-success me-2" style="font-size: 24px;"></i>
+                                <span>微信支付</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary purchase-submit px-4" data-goods-id="{{ goods.id }}">
+                    确认购买
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card-link {
+    color: inherit;
+}
+    
+.card-link:hover {
+    color: inherit;
+    text-decoration: none;
+}
+.cursor-pointer {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+    
+.cursor-pointer:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    padding: 1.5rem 1.5rem 0.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem 1.5rem;
+}
+
+.address-info {
+    transition: all 0.3s ease;
+}
+
+.address-info:hover {
+    border-color: #0d6efd !important;
+    background-color: #f8f9fa;
+}
+
+.form-check-input:checked + .form-check-label .address-info {
+    border-color: #0d6efd !important;
+    background-color: #f8f9fa;
+}
+
+.btn-primary {
+    padding: 0.5rem 2rem;
+    border-radius: 6px;
+}
+
+.input-group .btn {
+    padding: 0.375rem 1rem;
+}
+
+#purchaseQuantity {
+    border-left: 0;
+    border-right: 0;
+}
+
+/* 支付方式样式优化 */
+.payment-methods .form-check {
+    margin-bottom: 0.5rem;
+}
+
+.payment-methods .form-check-input {
+    margin-top: 0.5rem;
+}
+
+.payment-methods .form-check-label {
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    width: 100%;
+}
+
+.payment-methods .form-check-input:checked + .form-check-label {
+    background-color: #f8f9fa;
+}
+
+.payment-methods .form-check-label i {
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+
+.payment-methods .form-check-label span {
+    line-height: 24px;
+}
+
+/* 地址列表样式优化 */
+.address-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+}
+
+.address-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.address-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.address-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.address-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* 数量控制样式 */
+.quantity-control .btn {
+    padding: 0.375rem 0.75rem;
+    border-color: #dee2e6;
+    background-color: #fff;
+    transition: all 0.2s ease;
+}
+
+.quantity-control .btn:hover {
+    background-color: #e9ecef;
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.quantity-control .btn:active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+}
+
+.quantity-control .form-control {
+    border-left: 0;
+    border-right: 0;
+    text-align: center;
+    font-weight: 500;
+}
+
+.quantity-control .form-control:focus {
+    box-shadow: none;
+    border-color: #dee2e6;
+}
+
+.quantity-control .bi {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 数量控制函数
+    function decreaseQuantity() {
+        const input = document.getElementById('purchaseQuantity');
+        const currentValue = parseInt(input.value);
+        if (currentValue > 1) {
+            input.value = currentValue - 1;
+            validateQuantity(input);
+        }
+    }
+
+    function increaseQuantity() {
+        const input = document.getElementById('purchaseQuantity');
+        const currentValue = parseInt(input.value);
+        const maxStock = parseInt(input.max);
+        if (currentValue < maxStock) {
+            input.value = currentValue + 1;
+            validateQuantity(input);
+        }
+    }
+
+    // 数量输入验证
+    function validateQuantity(input) {
+        const maxStock = {{ goods.stock }};
+        const value = parseInt(input.value);
+        
+        if (isNaN(value) || value < 1) {
+            input.value = 1;
+        } else if (value > maxStock) {
+            input.value = maxStock;
+            showAlert(`库存不足，最多可购买 ${maxStock} 件`, 'warning');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM loaded, initializing purchase button handlers...');
+        
+        const isLoggedIn = {{ 'true' if current_user else 'false' }};
+        const purchaseModal = new bootstrap.Modal(document.getElementById('purchaseConfirmModal'));
+        
+        // 获取购买按钮
+        const purchaseBtn = document.querySelector('.purchase-submit');
+        console.log('Found purchase button:', purchaseBtn);
+        
+        if (purchaseBtn) {
+            purchaseBtn.addEventListener('click', async function(e) {
+                console.log('Purchase button clicked');
+                e.preventDefault();
+
+                if (!isLoggedIn) {
+                    console.log('User not logged in, redirecting to login...');
+                    showAlert('请先登录后再购买', 'warning');
+                    setTimeout(() => {
+                        const currentUrl = encodeURIComponent(window.location.href);
+                        window.location.href = `/login?next=${currentUrl}`;
+                    }, 2000);
+                    return;
+                }
+
+                const goodsId = this.dataset.goodsId;
+                console.log('Processing purchase for goods ID:', goodsId);
+                
+                const modalEl = document.getElementById('purchaseConfirmModal');
+                const submitBtn = this;
+
+                // 获取表单数据
+                const quantity = parseInt(modalEl.querySelector('#purchaseQuantity').value);
+                const addressId = modalEl.querySelector('.seckill-address:checked')?.value;
+                const paymentMethod = modalEl.querySelector('.seckill-payment:checked')?.value;
+
+                console.log('Form data:', { quantity, addressId, paymentMethod });
+
+                // 基础校验
+                if (!quantity || !addressId || !paymentMethod) {
+                    showAlert('请完善购买数量、地址和支付方式信息', 'warning');
+                    return;
+                }
+
+                // 库存校验
+                const maxStock = parseInt(modalEl.querySelector('#purchaseQuantity').max);
+                if (quantity > maxStock) {
+                    showAlert(`库存不足，最多可购买 ${maxStock} 件`, 'warning');
+                    return;
+                }
+
+                try {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = '购买中...';
+
+                    const formData = new URLSearchParams({
+                        quantity: quantity,
+                        address_id: addressId,
+                        payment_method: paymentMethod
+                    });
+
+                    console.log('Sending purchase request...');
+                    const response = await fetch(`/goods/${goodsId}/purchase/submit`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    });
+
+                    console.log('Purchase response:', response);
+                    purchaseModal.hide();
+
+                    const result = await response.json();
+                    console.log('Response data:', result);
+                    
+                    if (result.code === 200) {
+                        showAlert('购买成功，即将跳转到订单页面', 'success');
+                        setTimeout(() => {
+                            window.location.href = result.redirect || '/order/list';
+                        }, 2000);
+                    } else {
+                        showAlert(result.msg || '购买失败，请稍后重试', 'error');
+                    }
+                } catch (err) {
+                    console.error('购买请求失败:', err);
+                    showAlert('网络异常，请稍后重试', 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '确认购买';
+                }
+            });
+        } else {
+            console.error('Purchase button not found!');
+        }
+    });
+</script>
+{% endblock %}
+
+{% block head %}
+<style>
+    /* 地址选择样式 */
+    .address-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 1rem;
+    }
+
+    .address-info {
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        transition: background-color 0.2s;
+    }
+
+    .form-check-input:checked + .form-check-label .address-info {
+        background-color: #e9ecef;
+    }
+
+    .form-check-label {
+        width: 100%;
+        cursor: pointer;
+    }
+
+    /* 数量选择样式 */
+    .input-group {
+        width: 150px;
+    }
+
+    .input-group .form-control {
+        text-align: center;
+    }
+
+    .input-group .btn {
+        width: 40px;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}确认购买 - {{ goods.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">确认购买：{{ goods.name }}</h1>
+    
+    <!-- 商品信息展示 -->
+    <div class="card mb-4">
+        <div class="row g-0">
+            <div class="col-md-4">
+                <img src="{{ url_for('static', filename=goods.photo_url) if goods.photo_url else 'https://placehold.co/400x300' }}" 
+                     alt="{{ goods.name }}" 
+                     class="img-fluid rounded-start">
+            </div>
+            <div class="col-md-8">
+                <div class="card-body">
+                    <h5 class="card-title">{{ goods.name }}</h5>
+                    <p class="card-text">价格：<strong class="text-danger">¥{{ goods.price }}</strong></p>
+                    <p class="card-text">当前库存：<span class="text-muted">{{ goods.stock }} 件</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 购买表单 -->
+    <form id="purchaseForm" method="POST" action="{{ url_for('goods_purchase_submit', goods_id=goods.id) }}">
+        <!-- 购买数量 -->
+        <div class="mb-4">
+            <h5>购买数量</h5>
+            <input type="number" class="form-control w-25" id="quantity" name="quantity" 
+                   min="1" max="{{ goods.stock }}" value="1" 
+                   placeholder="请输入购买数量" required>
+            <div id="stockWarning" class="text-danger mt-2"></div>  <!-- 新增：库存校验提示 -->
+        </div>
+
+        <!-- 收货地址 -->
+        <div class="mb-4">
+            <h5>收货地址</h5>
+            <div id="addressList" class="mb-3">
+                {% if addresses %}
+                    {% for addr in addresses %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="address_id" 
+                               id="addr_{{ addr.id }}" value="{{ addr.id }}" required>
+                        <label class="form-check-label" for="addr_{{ addr.id }}">
+                            {{ addr.province }} {{ addr.city }} {{ addr.district }} {{ addr.detail }}<br>
+                            收货人：{{ addr.receiver }}  电话：{{ addr.phone }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-warning">
+                        您还没有收货地址，请先<a href="{{ url_for('address_add') }}">添加地址</a>
+                    </div>
+                {% endif %}
+            </div>
+            <a href="{{ url_for('address_add') }}" class="btn btn-sm btn-outline-secondary">添加新地址</a>
+        </div>
+
+        <!-- 支付方式 -->
+        <div class="mb-4">
+            <h5>支付方式</h5>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="payment_method" 
+                       id="alipay" value="alipay" required>
+                <label class="form-check-label" for="alipay">支付宝</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="payment_method" 
+                       id="wechat" value="wechat">
+                <label class="form-check-label" for="wechat">微信支付</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="payment_method" 
+                       id="cod" value="cod">
+                <label class="form-check-label" for="cod">货到付款</label>
+            </div>
+        </div>
+
+        <!-- 提交按钮 -->
+        <div class="d-grid mt-5">
+            <button type="submit" class="btn btn-lg btn-primary">确认购买</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('quantity');
+    const submitButton = document.querySelector('#purchaseForm button[type="submit"]');
+    const stockWarning = document.getElementById('stockWarning');
+    const goodsId = {{ goods.id }};  // 从模板变量获取商品ID
+
+    // 监听数量输入变化
+    quantityInput.addEventListener('input', async function() {
+        const quantity = parseInt(quantityInput.value);
+        
+        // 基础校验
+        if (isNaN(quantity) || quantity < 1) {
+            stockWarning.textContent = '请输入1件及以上的购买数量';
+            submitButton.disabled = true;
+            return;
+        }
+
+        // AJAX请求后端校验库存
+        try {
+            const response = await fetch(`/goods/${goodsId}/check_stock?quantity=${quantity}`);
+            const data = await response.json();
+            
+            if (data.valid) {
+                stockWarning.textContent = '';
+                submitButton.disabled = false;
+            } else {
+                stockWarning.textContent = data.message;
+                submitButton.disabled = true;
+            }
+        } catch (error) {
+            stockWarning.textContent = '库存校验失败，请刷新页面重试';
+            submitButton.disabled = true;
+        }
+    });
+// 原代码中此处为事件监听函数的结束括号，无明显语法错误，推测可能需要确保代码结构完整
+});
+</script>
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}收货地址{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>收货地址</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+            <i class="bi bi-plus-lg"></i> 新增地址
+        </button>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for address in addresses %}
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title mb-0">
+                            {{ address.receiver_name }}
+                            {% if address.is_default %}
+                            <span class="badge bg-primary ms-2">默认</span>
+                            {% endif %}
+                        </h5>
+                        <div class="dropdown">
+                            <button class="btn btn-link text-dark p-0" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editAddressModal{{ address.id }}">
+                                        <i class="bi bi-pencil"></i> 编辑
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteAddressModal{{ address.id }}">
+                                        <i class="bi bi-trash"></i> 删除
+                                    </button>
+                                </li>
+                                {% if not address.is_default %}
+                                <li>
+                                    <button class="dropdown-item set-default-btn" data-address-id="{{ address.id }}">
+                                        <i class="bi bi-star"></i> 设为默认
+                                    </button>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="card-text">
+                        <i class="bi bi-telephone"></i> {{ address.phone }}<br>
+                        <i class="bi bi-geo-alt"></i> {{ address.province }}{{ address.city }}{{ address.district }}{{ address.detail_address }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 编辑地址模态框 -->
+        <div class="modal fade" id="editAddressModal{{ address.id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">编辑地址</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="{{ url_for('address.address_edit', address_id=address.id) }}" method="POST">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">收货人</label>
+                                <input type="text" class="form-control" name="receiver_name" value="{{ address.receiver_name }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">手机号码</label>
+                                <input type="tel" class="form-control" name="phone" value="{{ address.phone }}" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">省份</label>
+                                    <input type="text" class="form-control" name="province" value="{{ address.province }}" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">城市</label>
+                                    <input type="text" class="form-control" name="city" value="{{ address.city }}" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">区县</label>
+                                    <input type="text" class="form-control" name="district" value="{{ address.district }}" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">详细地址</label>
+                                <textarea class="form-control" name="detail_address" rows="2" required>{{ address.detail_address }}</textarea>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_default" id="editIsDefault{{ address.id }}" {% if address.is_default %}checked{% endif %}>
+                                <label class="form-check-label" for="editIsDefault{{ address.id }}">设为默认地址</label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 删除地址确认模态框 -->
+        <div class="modal fade" id="deleteAddressModal{{ address.id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">确认删除</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        确定要删除这个地址吗？
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <form action="{{ url_for('address.address_delete', address_id=address.id) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-danger">删除</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 新增地址模态框 -->
+<div class="modal fade" id="addAddressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增地址</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('address.address_add') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">收货人</label>
+                        <input type="text" class="form-control" name="receiver_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">手机号码</label>
+                        <input type="tel" class="form-control" name="phone" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">省份</label>
+                            <input type="text" class="form-control" name="province" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">城市</label>
+                            <input type="text" class="form-control" name="city" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">区县</label>
+                            <input type="text" class="form-control" name="district" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">详细地址</label>
+                        <textarea class="form-control" name="detail_address" rows="2" required></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="is_default" id="isDefault">
+                        <label class="form-check-label" for="isDefault">设为默认地址</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置默认地址
+    document.querySelectorAll('.set-default-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const addressId = this.dataset.addressId;
+            fetch(`/address/${addressId}/set_default`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    // 刷新页面以更新地址列表
+                    window.location.reload();
+                } else {
+                    alert(data.msg || '设置失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('设置失败，请稍后重试');
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

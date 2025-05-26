@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}商品管理{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>商品管理</h2>
+        <a href="{{ url_for('admin.admin_goods_create') }}" class="btn btn-primary">添加商品</a>
+    </div>
+
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="search" placeholder="搜索商品名称" value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="category">
+                        <option value="">所有分类</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.args.get('category')|int == category.id %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">搜索</button>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-secondary w-100" onclick="resetSearch()">重置</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 商品列表 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>图片</th>
+                            <th>商品名称</th>
+                            <th>品牌/型号</th>
+                            <th>分类</th>
+                            <th>价格</th>
+                            <th>库存</th>
+                            <th>销量</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for goods in goods_list %}
+                        <tr>
+                            <td>{{ goods.id }}</td>
+                            <td>
+                                <img src="{{ url_for('static', filename=goods.photo_url) if goods.photo_url else 'https://placehold.co/100x100' }}"
+                                    alt="{{ goods.name }}" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                            </td>
+                            <td>{{ goods.name }}</td>
+                            <td>
+                                {% if goods.brand or goods.model %}
+                                {{ goods.brand or '' }}{% if goods.brand and goods.model %}/{% endif %}{{ goods.model or '' }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>{{ goods.category.name }}</td>
+                            <td>
+                                <span class="text-danger">¥{{ goods.price }}</span><br>
+                                <small class="text-muted"><del>¥{{ goods.original_price }}</del></small>
+                            </td>
+                            <td>
+                                <span class="{% if goods.stock > 10 %}text-success{% elif goods.stock > 0 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ goods.stock }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-primary">{{ goods.sales }}</span>
+                            </td>
+                            <td>{{ goods.create_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin.admin_goods_edit', goods_id=goods.id) }}" class="btn btn-sm btn-outline-primary">编辑</a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmDelete({{ goods.id }})">删除</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            {% if pagination.pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.admin_goods_list', page=pagination.prev_num, search=request.args.get('search', ''), category=request.args.get('category', '')) }}">上一页</a>
+                    </li>
+                    {% for p in range(1, pagination.pages + 1) %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.admin_goods_list', page=p, search=request.args.get('search', ''), category=request.args.get('category', '')) }}">{{ p }}</a>
+                    </li>
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.admin_goods_list', page=pagination.next_num, search=request.args.get('search', ''), category=request.args.get('category', '')) }}">下一页</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除商品 "<span id="deleteGoodsName"></span>" 吗？</p>
+                <p class="text-danger">此操作不可恢复！</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 重置搜索
+function resetSearch() {
+    window.location.href = "{{ url_for('admin.admin_goods_list') }}";
+}
+
+// 删除商品确认
+function confirmDelete(goodsId) {
+    showConfirm('确定要删除这个商品吗？此操作不可恢复！', function(confirmed) {
+        if (confirmed) {
+            fetch(`/admin/goods/delete/${goodsId}`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    showAlert(data.msg, 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showAlert(data.msg, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('删除失败:', error);
+                showAlert('删除请求失败，请稍后重试', 'error');
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

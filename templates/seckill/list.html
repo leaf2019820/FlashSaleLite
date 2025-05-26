@@ -1,0 +1,746 @@
+{% extends "base.html" %}
+
+{% block title %}秒杀活动列表{% endblock %}
+
+{% block head %}
+<style>
+    .seckill-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        height: 100%;
+    }
+    
+    .seckill-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .seckill-image {
+        height: 200px;
+        object-fit: cover;
+    }
+    
+    .seckill-price {
+        color: #e53935;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .seckill-original-price {
+        color: #999;
+        text-decoration: line-through;
+        font-size: 1rem;
+    }
+    
+    .seckill-stock {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .seckill-time {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .seckill-button {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 4px;
+        background: #e53935;
+        color: white;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .seckill-button:hover:not(:disabled) {
+        background: #c62828;
+    }
+    
+    .seckill-button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+    
+    .countdown {
+        color: #e53935;
+        font-weight: bold;
+    }
+    
+    .modal-content {
+        border-radius: 8px;
+    }
+    
+    .modal-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .modal-footer {
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .address-item, .payment-item {
+        cursor: pointer;
+        padding: 10px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .address-item:hover, .payment-item:hover {
+        border-color: #e53935;
+    }
+    
+    .address-item.selected, .payment-item.selected {
+        border-color: #e53935;
+        background: #fff5f5;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #e53935;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .card-title {
+        height: 48px;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .status-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .status-active {
+        background-color: #4caf50;
+        color: white;
+    }
+
+    .status-pending {
+        background-color: #2196f3;
+        color: white;
+    }
+
+    .status-ended {
+        background-color: #9e9e9e;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 全局提示框 -->
+<div id="seckill-alert" class="alert d-none position-fixed" 
+     style="z-index: 9999; left: 50%; top: 20px; transform: translateX(-50%); width: fit-content; max-width: 90%; min-width: auto; transition: all 0.3s ease; pointer-events: none;">
+</div>
+
+<div class="container py-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+        {% for activity in activities %}
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-shadow">
+                <!-- 商品照片 -->
+                <div class="position-relative">
+                    <img src="{{ url_for('static', filename=activity.goods.photo_url) if activity.goods and activity.goods.photo_url else 'https://placehold.co/400x300' }}"
+                        class="card-img-top" alt="{{ activity.goods.name if activity.goods else '未知商品' }}"
+                        style="height: 200px; object-fit: cover;">
+                </div>
+                
+                <div class="card-body">
+                    <!-- 商品名称 -->
+                    <h5 class="card-title text-truncate mb-3">{{ activity.goods.name if activity.goods else "未知商品" }}</h5>
+                    
+                    <!-- 价格信息 -->
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="text-danger fw-bold fs-4">¥{{ activity.seckill_price }}</span>
+                        <span class="text-muted text-decoration-line-through ms-2">¥{{ activity.goods.original_price if activity.goods else "0.00" }}</span>
+                    </div>
+                    
+                    <!-- 库存信息 -->
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-box-seam"></i> 库存：{{ activity.available_stock }} 件
+                        </small>
+                    </div>
+                    
+                    <!-- 活动时间 -->
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> {{ activity.start_time_str }} 至 {{ activity.end_time_str }}
+                        </small>
+                        <!-- 状态标签 -->
+                        <span class="badge rounded-pill {% if activity.is_active %}bg-success{% elif activity.start_time > current_time %}bg-primary{% else %}bg-danger{% endif %}">
+                            {% if activity.is_active %}进行中{% elif activity.start_time > current_time %}未开始{% else %}已结束{% endif %}
+                        </span>
+                    </div>
+
+                    <!-- 倒计时 -->
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="bi bi-hourglass-split"></i> 
+                            <span class="countdown" 
+                                  data-start="{{ activity.start_time_str }}" 
+                                  data-end="{{ activity.end_time_str }}"
+                                  data-status="{% if activity.is_active %}active{% elif activity.start_time > current_time %}pending{% else %}ended{% endif %}">
+                                计算中...
+                            </span>
+                        </small>
+                    </div>
+                    
+                    <!-- 抢购按钮 -->
+                    <button class="btn w-100 {% if activity.is_active %}btn-danger{% else %}btn-secondary{% endif %}" 
+                            {% if not activity.is_active %}disabled{% endif %} 
+                            data-bs-toggle="modal"
+                            data-bs-target="#seckillModal_{{ activity.id }}">
+                        {% if activity.is_active %}立即抢购{% else %}不可参与{% endif %}
+                    </button>
+                </div>
+
+                <!-- 登录提示 -->
+                {% if not current_user %}
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> 登录后可参与秒杀
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-warning text-center">
+                <i class="bi bi-exclamation-circle"></i> 当前无秒杀活动
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 分页导航 -->
+    {% if total_pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center align-items-center">
+            <!-- 上一页 -->
+            <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('seckill_list', page=current_page-1) if current_page > 1 else '#' }}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            
+            <!-- 页码 -->
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {% if p == current_page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('seckill_list', page=p) }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+            
+            <!-- 下一页 -->
+            <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('seckill_list', page=current_page+1) if current_page < total_pages else '#' }}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+
+            <!-- 页码跳转 -->
+            <li class="page-item ms-3">
+                <div class="input-group" style="width: 150px;">
+                    <input type="number" class="form-control" id="pageInput" min="1" max="{{ total_pages }}" 
+                           placeholder="页码" aria-label="页码">
+                    <button class="btn btn-outline-primary" type="button" onclick="goToPage()">
+                        <i class="bi bi-arrow-right"></i> 跳转
+                    </button>
+                </div>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- 秒杀确认模态框 -->
+{% for activity in activities %}
+<div class="modal fade" id="seckillModal_{{ activity.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold">确认抢购</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 商品信息 -->
+                <div class="goods-info p-3 bg-light rounded mb-4">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ url_for('static', filename=activity.goods.photo_url) if activity.goods.photo_url else 'https://placehold.co/400x300' }}"
+                            class="rounded" style="width: 80px; height: 80px; object-fit: cover;" alt="{{ activity.goods.name }}">
+                        <div class="ms-3">
+                            <h6 class="mb-1 text-truncate" style="max-width: 200px;">{{ activity.goods.name }}</h6>
+                            <div class="d-flex align-items-center">
+                                <span class="text-danger fw-bold fs-5">¥{{ activity.seckill_price }}</span>
+                                <del class="text-muted ms-2">¥{{ activity.goods.original_price }}</del>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 购买数量 -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">购买数量</label>
+                    <div class="d-flex align-items-center">
+                        <div class="input-group quantity-control" style="width: 150px;">
+                            <input type="number" class="form-control text-center" value="1" disabled>
+                        </div>
+                        <span class="ms-3 text-muted">当前仅支持单件购买</span>
+                    </div>
+                </div>
+
+                <!-- 地址选择 -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">收货地址</label>
+                    {% if addresses %}
+                    <div class="address-list">
+                        {% for address in addresses %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input seckill-address" type="radio" 
+                                   name="address_id_{{ activity.id }}" id="addr_{{ address.id }}_{{ activity.id }}" 
+                                   value="{{ address.id }}" required>
+                            <label class="form-check-label w-100" for="addr_{{ address.id }}_{{ activity.id }}">
+                                <div class="address-info p-3 border rounded">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold">{{ address.receiver_name }}</span>
+                                        <span class="text-muted">{{ address.phone }}</span>
+                                    </div>
+                                    <div class="text-muted small mt-2">
+                                        <i class="bi bi-geo-alt me-1"></i>
+                                        {{ address.province }} {{ address.city }} {{ address.district }}
+                                    </div>
+                                    <div class="text-muted small">
+                                        {{ address.detail_address }}
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        {% endfor %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('address.address_add') }}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-plus me-1"></i>添加新地址
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning d-flex align-items-center">
+                        <i class="bi bi-exclamation-circle me-2"></i>
+                        <div>您还没有收货地址，请先<a href="{{ url_for('address.address_list') }}" class="alert-link">添加地址</a></div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- 支付方式 -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">支付方式</label>
+                    <div class="payment-methods">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input seckill-payment" type="radio" 
+                                   name="payment_method_{{ activity.id }}" value="alipay" required>
+                            <label class="form-check-label d-flex align-items-center">
+                                <i class="bi bi-alipay text-primary me-2" style="font-size: 24px;"></i>
+                                <span>支付宝</span>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input seckill-payment" type="radio" 
+                                   name="payment_method_{{ activity.id }}" value="wechat" required>
+                            <label class="form-check-label d-flex align-items-center">
+                                <i class="bi bi-wechat text-success me-2" style="font-size: 24px;"></i>
+                                <span>微信支付</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger seckill-submit px-4" data-activity-id="{{ activity.id }}">
+                    确认抢购
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block styles %}
+<style>
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        transition: all 0.3s ease;
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+    
+    .card {
+        transition: all 0.3s ease;
+    }
+    
+    .address-info {
+        transition: all 0.2s ease;
+    }
+    
+    .address-info:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .form-check-input:checked + .form-check-label .address-info {
+        border-color: #0d6efd !important;
+        background-color: #e7f1ff;
+    }
+
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .modal-header {
+        padding: 1.5rem 1.5rem 0.5rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        padding: 1rem 1.5rem 1.5rem;
+    }
+
+    .address-info {
+        transition: all 0.3s ease;
+    }
+
+    .address-info:hover {
+        border-color: #dc3545 !important;
+        background-color: #f8f9fa;
+    }
+
+    .form-check-input:checked + .form-check-label .address-info {
+        border-color: #dc3545 !important;
+        background-color: #f8f9fa;
+    }
+
+    /* 支付方式样式优化 */
+    .payment-methods .form-check {
+        margin-bottom: 0.5rem;
+    }
+
+    .payment-methods .form-check-input {
+        margin-top: 0.5rem;
+    }
+
+    .payment-methods .form-check-label {
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .payment-methods .form-check-input:checked + .form-check-label {
+        background-color: #f8f9fa;
+    }
+
+    .payment-methods .form-check-label i {
+        line-height: 1;
+        display: flex;
+        align-items: center;
+    }
+
+    .payment-methods .form-check-label span {
+        line-height: 24px;
+    }
+
+    /* 地址列表样式优化 */
+    .address-list {
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+    }
+
+    .address-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .address-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    .address-list::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+
+    .address-list::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* 数量控制样式 */
+    .quantity-control .form-control {
+        border: 1px solid #dee2e6;
+        text-align: center;
+        font-weight: 500;
+        background-color: #f8f9fa;
+    }
+
+    .quantity-control .form-control:disabled {
+        background-color: #f8f9fa;
+        cursor: not-allowed;
+    }
+
+    /* 添加提示框动画样式 */
+    #seckill-alert {
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: none;
+        border-radius: 8px;
+        padding: 8px 16px;
+        margin: 0;
+        position: fixed;
+        pointer-events: none;
+        background: white;
+    }
+    
+    #seckill-alert .d-flex {
+        pointer-events: auto;
+    }
+    
+    #seckill-alert.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    
+    #seckill-alert:not(.show) {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    
+    #seckill-alert .btn-close {
+        padding: 0.5rem;
+        margin: -0.5rem -0.5rem -0.5rem 0.5rem;
+        pointer-events: auto;
+    }
+    
+    #seckill-alert .d-flex {
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+    }
+    
+    #seckill-alert i {
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+    
+    #seckill-alert .flex-grow-1 {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.95rem;
+    }
+    
+    /* 优化按钮加载状态 */
+    .btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.8;
+    }
+    
+    /* 添加图标动画 */
+    .bi-arrow-repeat {
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const isLoggedIn = {{ 'true' if current_user else 'false' }};
+        
+        // 添加页码输入框回车事件
+        document.getElementById('pageInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                goToPage();
+            }
+        });
+
+        // 页码跳转
+        function goToPage() {
+            const pageInput = document.getElementById('pageInput');
+            const page = parseInt(pageInput.value);
+            const totalPages = {{ total_pages }};
+            
+            if (isNaN(page) || page < 1 || page > totalPages) {
+                showAlert('请输入有效的页码（1-' + totalPages + '）', 'warning');
+                return;
+            }
+            
+            window.location.href = "{{ url_for('seckill_list') }}?page=" + page;
+        }
+
+        // 立即购买
+        function buyNow(activityId) {
+            if (!isLoggedIn) {
+                showAlert('请先登录', 'warning');
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 1500);
+                return;
+            }
+            
+            // 获取支付方式和地址信息
+            const modalEl = document.getElementById(`seckillModal_${activityId}`);
+            const addressId = modalEl.querySelector('.seckill-address:checked')?.value;
+            const paymentMethod = modalEl.querySelector('.seckill-payment:checked')?.value;
+            
+            if (!addressId || !paymentMethod) {
+                showAlert('请选择收货地址和支付方式', 'warning');
+                return;
+            }
+            
+            // 立即关闭模态框
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal.hide();
+            
+            fetch(`/seckill/${activityId}/purchase`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    address_id: addressId,
+                    payment_method: paymentMethod
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    showAlert(data.msg, 'success');
+                    // 使用返回的重定向URL
+                    if (data.redirect) {
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 1500);
+                    } else {
+                        // 如果没有重定向URL，则跳转到订单列表
+                        setTimeout(() => {
+                            window.location.href = '/order/list';
+                        }, 1500);
+                    }
+                } else {
+                    showAlert(data.msg || '下单失败，请稍后重试', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('操作失败，请重试', 'error');
+            });
+        }
+
+        // 为所有确认抢购按钮添加点击事件
+        document.querySelectorAll('.seckill-submit').forEach(button => {
+            console.log('找到抢购按钮:', button);
+            button.addEventListener('click', function() {
+                const activityId = this.dataset.activityId;
+                console.log('按钮点击，活动ID:', activityId);
+                if (activityId) {
+                    buyNow(activityId);
+                }
+            });
+        });
+
+        // 倒计时功能
+        function updateCountdown() {
+            const countdowns = document.querySelectorAll('.countdown');
+            const now = new Date();
+            
+            countdowns.forEach(countdown => {
+                const startTime = new Date(countdown.dataset.start);
+                const endTime = new Date(countdown.dataset.end);
+                const status = countdown.dataset.status;
+                
+                let targetTime;
+                if (status === 'pending') {
+                    targetTime = startTime;
+                } else if (status === 'active') {
+                    targetTime = endTime;
+                } else {
+                    countdown.textContent = '00:00:00';
+                    return;
+                }
+                
+                const diff = targetTime - now;
+                if (diff <= 0) {
+                    if (status === 'pending') {
+                        countdown.textContent = '即将开始';
+                    } else {
+                        countdown.textContent = '00:00:00';
+                    }
+                    return;
+                }
+                
+                // 计算时分秒
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                // 格式化显示
+                countdown.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            });
+        }
+        
+        // 立即更新一次
+        updateCountdown();
+        
+        // 每秒更新一次
+        setInterval(updateCountdown, 1000);
+    });
+</script>
+{% endblock %}

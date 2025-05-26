@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}首页{% endblock %}
+
+{% block head %}
+<style>
+    /* 商品卡片样式优化 */
+    .card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        height: 100%;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .card-img-top {
+        height: 200px;
+        object-fit: cover;
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
+    }
+
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: #2c3e50;
+        /* 标题超出两行显示省略号 */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        height: 2.8em;
+    }
+
+    .card-text {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* 价格样式 */
+    .price-section {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .current-price {
+        color: #dc3545;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .original-price {
+        color: #6c757d;
+        text-decoration: line-through;
+        font-size: 0.9rem;
+        margin-left: 0.5rem;
+    }
+
+    /* 按钮样式 */
+    .btn-purchase {
+        width: 100%;
+        margin-top: 1rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+    }
+
+    /* 分类标签样式 */
+    .category-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.8rem;
+    }
+
+    /* 商品信息容器 */
+    .goods-info {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    /* 商品描述 */
+    .goods-description {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+        /* 描述超出两行显示省略号 */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        height: 2.5em;
+    }
+
+    /* 底部信息 */
+    .card-footer {
+        background: none;
+        border-top: 1px solid #f0f0f0;
+        padding: 0.75rem 1.25rem;
+    }
+
+    .goods-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    /* 轮播图样式优化 */
+    .carousel {
+        margin-bottom: 2rem;
+    }
+
+    .carousel-item {
+        height: 400px;
+        background-color: #f8f9fa;
+    }
+
+    .carousel-item img {
+        height: 100%;
+        object-fit: cover;
+        filter: brightness(0.9);
+    }
+
+    .carousel-caption {
+        background: rgba(0, 0, 0, 0.6);
+        padding: 2rem;
+        border-radius: 0.5rem;
+        max-width: 600px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 20%;
+    }
+
+    .carousel-caption h3 {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #fff;
+    }
+
+    .carousel-caption p {
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 1.5rem;
+    }
+
+    .carousel-caption .btn {
+        padding: 0.75rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .carousel-indicators {
+        margin-bottom: 2rem;
+    }
+
+    .carousel-indicators button {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin: 0 6px;
+    }
+
+    .carousel-control-prev,
+    .carousel-control-next {
+        width: 5%;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .carousel:hover .carousel-control-prev,
+    .carousel:hover .carousel-control-next {
+        opacity: 0.8;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .cursor-pointer:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 轮播图 -->
+<div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="0" class="active"></button>
+        <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="1"></button>
+        <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="2"></button>
+    </div>
+    <div class="carousel-inner">
+        <div class="carousel-item active">
+            <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+                 class="d-block w-100" alt="限时特惠">
+            <div class="carousel-caption text-center">
+                <h3>限时特惠</h3>
+                <p>精选商品，超值优惠，错过不再有</p>
+                <a href="#hot-products" class="btn btn-primary">立即抢购</a>
+            </div>
+        </div>
+        <div class="carousel-item">
+            <img src="https://images.unsplash.com/photo-1607082349566-187342175e2f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+                 class="d-block w-100" alt="新品上市">
+            <div class="carousel-caption text-center">
+                <h3>新品上市</h3>
+                <p>品质保证，值得信赖，引领潮流</p>
+                <a href="#new-products" class="btn btn-primary">查看新品</a>
+            </div>
+        </div>
+        <div class="carousel-item">
+            <img src="https://images.unsplash.com/photo-1607083206968-13611e3d76db?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+                 class="d-block w-100" alt="会员专享">
+            <div class="carousel-caption text-center">
+                <h3>会员专享</h3>
+                <p>尊享会员特权，更多优惠等你来</p>
+                <a href="#member-benefits" class="btn btn-primary">了解详情</a>
+            </div>
+        </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div>
+
+<!-- 商品列表 -->
+<div class="container" id="hot-products">
+    <h2 class="mb-4">热门商品</h2>
+    <div class="row row-cols-1 row-cols-md-4 g-4">
+        {% for goods in goods_list %}
+        <div class="col">
+            <a href="{{ url_for('goods_detail', goods_id=goods.id) }}" class="text-decoration-none">
+                <div class="card h-100">
+                    <img src="{{ url_for('static', filename=goods.photo_url) if goods.photo_url else 'https://placehold.co/300x200' }}"
+                        class="card-img-top" alt="{{ goods.name }}" style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title text-truncate">{{ goods.name }}</h5>
+                        <p class="card-text text-truncate">{{ goods.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-danger h5 mb-0">¥{{ goods.price }}</span>
+                            <span class="btn btn-outline-primary">立即查看</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 分页导航 -->
+    {% if pagination.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center align-items-center">
+            <!-- 上一页 -->
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('index', page=pagination.prev_num) if pagination.has_prev else '#' }}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            
+            <!-- 页码 -->
+            {% for p in range(1, pagination.pages + 1) %}
+                {% if p == 1 or p == pagination.pages or (p >= pagination.page - 2 and p <= pagination.page + 2) %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('index', page=p) }}">{{ p }}</a>
+                    </li>
+                {% elif p == pagination.page - 3 or p == pagination.page + 3 %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            <!-- 下一页 -->
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('index', page=pagination.next_num) if pagination.has_next else '#' }}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+
+            <!-- 页码跳转 -->
+            <li class="page-item ms-3">
+                <div class="input-group" style="width: 150px;">
+                    <input type="number" class="form-control" id="pageInput" min="1" max="{{ pagination.pages }}" 
+                           placeholder="页码" aria-label="页码">
+                    <button class="btn btn-outline-primary" type="button" onclick="goToPage()">
+                        <i class="bi bi-arrow-right"></i> 跳转
+                    </button>
+                </div>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 添加页码输入框回车事件
+        document.getElementById('pageInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                goToPage();
+            }
+        });
+
+        // 页码跳转函数
+        window.goToPage = function() {
+            const pageInput = document.getElementById('pageInput');
+            const page = parseInt(pageInput.value);
+            const totalPages = {{ pagination.pages }};
+            
+            if (page && page >= 1 && page <= totalPages) {
+                window.location.href = "{{ url_for('index') }}?page=" + page;
+            } else {
+                alert('请输入有效的页码（1-' + totalPages + '）');
+            }
+        };
+    });
+</script>
+{% endblock %}

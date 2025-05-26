@@ -1,0 +1,59 @@
+/* 全局样式 */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+    padding-bottom: 40px;
+}
+/* 导航栏文字样式调整 */
+.navbar .nav-link {
+    color: #ffffff; /* 白色文字，与蓝色渐变背景形成高对比度 */
+    font-weight: 500; /* 中等加粗（Bootstrap默认400） */
+    transition: color 0.2s; /* 颜色渐变过渡 */
+}
+
+.navbar .nav-link:hover {
+    color: #ffd700; /* 悬停时金色（#ffd700），增强交互反馈 */
+}
+/* 卡片阴影效果 */
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+/* 秒杀按钮强调色 */
+.btn-primary {
+    background-color: #ff4757;
+    border-color: #ff4757;
+}
+
+.btn-primary:hover {
+    background-color: #ff6b81;
+    border-color: #ff6b81;
+}
+
+/* 商品分类下拉菜单悬停展开 */
+.dropdown:hover .dropdown-menu {
+    display: block;
+    margin-top: 0;
+}
+
+/* 商品卡片布局 */
+.row-cols-md-4.row-cols-lg-6 .col {
+    flex: 0 0 auto;
+    width: 20%; /* 一行5个（100%/5），可根据需求调整为16.66%（6个） */
+}
+@media (max-width: 992px) {
+    .row-cols-md-4.row-cols-lg-6 .col {
+        width: 25%; /* 中等屏幕一行4个 */
+    }
+}
+@media (max-width: 768px) {
+    .row-cols-md-4.row-cols-lg-6 .col {
+        width: 50%; /* 小屏幕一行2个 */
+    }
+}
