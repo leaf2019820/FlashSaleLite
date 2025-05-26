@@ -103,39 +103,37 @@ flask run
 系统主要界面的截图，包括：
 1. 首页展示
 
-   ![1748092020289](C:\Users\25932\AppData\Roaming\Typora\typora-user-images\1748092020289.png)
+   ![系统运行截图](系统运行截图/sy.png)
 
 2. 秒杀活动列表
 
-   ![1748092151051](C:\Users\25932\AppData\Roaming\Typora\typora-user-images\1748092151051.png)
-
-   ![1748092164661](C:\Users\25932\AppData\Roaming\Typora\typora-user-images\1748092164661.png)
+   ![秒杀活动截图](系统运行截图/qrqg.png)
 
 3. 商品详情页
 
-   ![1748092052817](C:\Users\25932\AppData\Roaming\Typora\typora-user-images\1748092052817.png)
+   ![商品详情截图](系统运行截图/spxq.png)
 
-   ![1748092183528](C:\Users\25932\AppData\Roaming\Typora\typora-user-images\1748092183528.png)
+   ![确认购买截图](系统运行截图/qrgm.png)
 
 4. 订单管理界面
 
-   ![1748092064410](C:\Users\25932\AppData\Roaming\Typora\typora-user-images\1748092064410.png)
+   ![订单管理截图](系统运行截图/ddgl.png)
 
-5. 后台管理界面]
+5. 后台管理界面
 
-   ![1748092074041](C:\Users\25932\AppData\Roaming\Typora\typora-user-images\1748092074041.png)
+   ![后台管理截图](系统运行截图/htgl.png)
 
    6.用户管理图
 
-   ![1748092111550](C:\Users\25932\AppData\Roaming\Typora\typora-user-images\1748092111550.png)
+   ![用户管理截图](系统运行截图/yhgl.png)
 
    7.我的订单
 
-   ![1748092205314](C:\Users\25932\AppData\Roaming\Typora\typora-user-images\1748092205314.png)
+   ![我的订单截图](系统运行截图/wddd.png)
 
    8.我的地址
 
-   ![1748092235291](C:\Users\25932\AppData\Roaming\Typora\typora-user-images\1748092235291.png)
+   ![我的地址截图](系统运行截图/shdz.png)
 
 ## 八、常见问题
 
